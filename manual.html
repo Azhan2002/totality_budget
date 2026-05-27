@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Totality Finance — User Handbook & Operations Manual</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #E4002B;
+      --primary-hover: #C30022;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-canvas: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --radius: 12px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Base Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+      color: #0f172a;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      padding: 50px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+    }
+
+    /* Floating Utilities */
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .back-btn:hover {
+      color: var(--primary);
+    }
+
+    .print-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 12px rgba(228, 0, 43, 0.2);
+    }
+
+    .print-btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* Header Section */
+    .header-block {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo-container img {
+      width: 80px;
+      height: 80px;
+      border-radius: 18px;
+      border: 3px solid rgba(228, 0, 43, 0.1);
+    }
+
+    .title-area h1 {
+      font-size: 34px;
+      line-height: 1.2;
+      color: #0f172a;
+    }
+
+    .title-area p {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-top: 4px;
+    }
+
+    /* Table of Contents */
+    .toc-container {
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+
+    .toc-title {
+      font-size: 18px;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+
+    .toc-list {
+      list-style-type: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 10px;
+    }
+
+    .toc-list a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 14px;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toc-list a:hover {
+      color: var(--primary);
+    }
+
+    /* Section styling */
+    .section-block {
+      margin-bottom: 60px;
+    }
+
+    .section-block h2 {
+      font-size: 24px;
+      border-bottom: 2px solid rgba(228, 0, 43, 0.1);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #0f172a;
+    }
+
+    .section-block h3 {
+      font-size: 18px;
+      margin: 24px 0 12px 0;
+      color: #1e293b;
+    }
+
+    .section-block p {
+      margin-bottom: 16px;
+      color: #334155;
+      font-size: 14.5px;
+      line-height: 1.7;
+    }
+
+    /* Step indicator card */
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    .step-card {
+      background: var(--bg-canvas);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      margin-bottom: 12px;
+    }
+
+    .step-card h3 {
+      font-size: 15px;
+      margin: 0 0 8px 0;
+    }
+
+    .step-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+
+    /* Feature highlights */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-info { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+
+    /* Screenshot element */
+    .screenshot-wrapper {
+      margin: 24px 0;
+      text-align: center;
+      background-color: var(--bg-canvas);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+    }
+
+    .screenshot {
+      max-width: 100%;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+
+    .screenshot:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .screenshot-caption {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    /* Tip block */
+    .info-callout {
+      background: rgba(228, 0, 43, 0.03);
+      border-left: 4px solid var(--primary);
+      padding: 18px 24px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+    }
+
+    .info-callout strong {
+      display: block;
+      color: #0f172a;
+      font-family: 'Outfit', sans-serif;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .info-callout p {
+      font-size: 13.5px;
+      color: #475569;
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+
+    /* Page Breaks for Printing */
+    .page-break {
+      display: none;
+    }
+
+    /* Table Styles */
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    .doc-table th, .doc-table td {
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      text-align: left;
+      font-size: 13.5px;
+      vertical-align: top;
+    }
+
+    .doc-table th {
+      background-color: var(--bg-canvas);
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    /* Footer styling */
+    .footer {
+      margin-top: 60px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+      }
+      
+      .container {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      .page-break {
+        display: block !important;
+        page-break-before: always !important;
+        height: 0;
+        margin: 0;
+        border: none;
+      }
+
+      h1, h2, h3, h4 {
+        color: black !important;
+      }
+
+      .screenshot-wrapper {
+        background: transparent !important;
+        padding: 8px 0 !important;
+        border: none !important;
+      }
+
+      .screenshot {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+        max-height: 380px !important;
+        width: auto !important;
+        margin: 0 auto !important;
+        display: block !important;
+        object-fit: contain !important;
+      }
+
+      .info-callout {
+        background: #f8fafc !important;
+        border-left: 4px solid #0f172a !important;
+      }
+
+      @page {
+        size: A4;
+        margin: 15mm 20mm;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Utility bar (hidden in print) -->
+    <div class="top-actions no-print">
+      <a href="index.html" class="back-btn">
+        <svg style="width: 16px; height: 16px; fill: currentColor; transform: rotate(180deg);" viewBox="0 0 24 24">
+          <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Back to App Dashboard
+      </a>
+      <button onclick="window.print()" class="print-btn">
+        <svg style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24">
+          <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2m-12-4h10v8H6z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Print / Save to PDF
+      </button>
+    </div>
+
+    <!-- HEADER BLOCK -->
+    <div class="header-block">
+      <div class="logo-container">
+        <img src="logo.png" alt="Totality Logo">
+      </div>
+      <div class="title-area">
+        <h1>Totality Finance</h1>
+        <p>User Handbook & Quick-Start Operations Manual</p>
+      </div>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc-container no-print">
+      <h3 class="toc-title">Table of Contents</h3>
+      <ul class="toc-list">
+        <li><a href="#welcome">📌 1. Welcome & Getting Started</a></li>
+        <li><a href="#dashboard">📊 2. Main Dashboard & Accounts</a></li>
+        <li><a href="#budget">💸 3. Budget Planner & Indicators</a></li>
+        <li><a href="#recurring">🔁 4. Joint Recurring Flows</a></li>
+        <li><a href="#debts">🤝 5. Credits & Debts Ledger</a></li>
+        <li><a href="#annual">📅 6. Annual Summary Overview</a></li>
+        <li><a href="#goals">🎯 7. Savings Goals & Suggestions</a></li>
+        <li><a href="#tools">🛠️ 8. Consolidated Financial Tools</a></li>
+        <li><a href="#setup">⚙️ 9. System Configurations</a></li>
+      </ul>
+    </div>
+
+    <!-- SECTION 1: WELCOME & STARTING -->
+    <div class="section-block" id="welcome">
+      <h2>📌 1. Welcome & 3-Step Setup</h2>
+      <p>Welcome to <strong>Totality Finance</strong>! This platform is a serverless, browser-driven financial cockpit configured with custom branding, detailed expense categories, automated recurring syncs, and advanced decision-making simulators.</p>
+      <p>If you are opening the application for the first time, get configured in under 3 minutes:</p>
+      
+      <div class="step-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Verify Directory</h3>
+          <p>Navigate to <strong>Setup & Config</strong> to set your custom spending categories, banks, and active income sources.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Adjust Budgets</h3>
+          <p>Set a target limit for your categories. Categories with <strong>Rs. 0</strong> budgeted remain inactive but alert you if expenses are logged.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Record Transaction</h3>
+          <p>Enter your active transaction ledger. Automatic flows (subscriptions/incomes) will generate up to today's local date.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 2: CORE DASHBOARD -->
+    <div class="section-block" id="dashboard">
+      <h2>📊 2. Personal Finance Dashboard Overview</h2>
+      <p>The main **Dashboard** acts as your high-level control room. It consolidates monthly financial indicators (Total Income, Total Spent, Net Savings, Savings Rate) alongside visual charts and active summaries:</p>
+      
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/dashboard.png" alt="Dashboard Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 1: Main control dashboard showing account directories and savings milestones.</div>
+      </div>
+
+      <h3>Key Dashboard Elements</h3>
+      <ul>
+        <li><strong>Cumulative Summary Cards:</strong> Track Net Savings in real-time. If you run a monthly deficit, the Net Savings card automatically updates to a highlighted <span class="badge badge-danger">Red</span> state.</li>
+        <li><strong>Bank Directory Preview:</strong> View cash balances at a glance, styled dynamically to reflect fund safety.</li>
+        <li><strong>Goal Tracker Preview:</strong> Review the active progress bar of your topmost savings goals.</li>
+        <li><strong>Top-bar Masked Balances:</strong> Check your <em>Net Cash Balance</em> and your active <em>Daily Spend Acc.</em> balances at the top center of the dashboard. Click the privacy eye icon (👁️) to mask or unmask these values; visibility preferences are persisted in your browser's local storage.</li>
+      </ul>
+
+      <div class="info-callout">
+        <strong>🔔 Non-blocking Toast Alerts</strong>
+        <p>Totality features a sleek, non-blocking toast notification system. Critical actions (e.g. adding transactions, adjusting recurring flows, or updating savings goals) trigger self-dismissing alerts at the bottom right, keeping you informed without disrupting your workflow.</p>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 3: BUDGET PLANNER -->
+    <div class="section-block" id="budget">
+      <h2>💸 3. Monthly Budget Planner</h2>
+      <p>Toggle to the **Monthly Budget** tab to allocate resources and review actual spending margins. The budget planner features an locked, zero-shift table layout:</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/budget_planner.png" alt="Budget Planner Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 2: Budget Planner containing pink editable cells and Over-Budget alerts.</div>
+      </div>
+
+      <h3>Allocations & Over-Budget Warnings</h3>
+      <p>Double-click inside any cell in the <em>Budget</em> column to update a target limit. The column structure remains locked in-place to prevent layout shifting. If actual spending on a category exceeds its budget (or if a transaction is recorded on a <strong>Rs. 0</strong> budget category), the status tag instantly alerts you as <span class="badge badge-danger">🚨 Over Budget</span>.</p>
+
+      <div class="info-callout">
+        <strong>🎨 Brand Theme Details</strong>
+        <p>In Light Mode, all editable budget cells utilize a premium soft pink background (<code>#fff0f2</code>) and border to separate inputs visually from surrounding numeric values.</p>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 4: RECURRING FLOWS -->
+    <div class="section-block" id="recurring">
+      <h2>🔁 4. Joint Recurring Flows (Inflows & Outflows)</h2>
+      <p>The joint **Recurring Flows** panel unifies fixed incomes and fixed expenses into a single processing center. Rather than logging repeating utilities manually, Totality auto-generates ledger events based on custom billing days.</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/recurring_flows.png" alt="Recurring Flows Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 3: Joint Recurring Inflows and Outflows center with Start Month indicators.</div>
+      </div>
+
+      <h3>Flow Management Features</h3>
+      <ul>
+        <li><strong>Flow Types:</strong> Declare flows as either <em>Fixed Income (Inflow)</em> or <em>Fixed Expense (Outflow)</em>. Inflow cards display clean green amount badges, while outflows render in warning red.</li>
+        <li><strong>Net Monthly Flow Scorecard:</strong> Calculates your monthly fixed surplus or deficit before variable costs are registered.</li>
+        <li><strong>Start Month & Pruning:</strong> Declare when a recurring flow starts. The app automatically logs historic occurrences up to today's date, and automatically prunes old logs if start dates shift.</li>
+      </ul>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 5: CREDITS & DEBTS -->
+    <div class="section-block" id="debts">
+      <h2>🤝 5. Credits & Debts Ledger</h2>
+      <p>The **Credits & Debts Ledger** helps you manage liabilities (money you owe to others) and assets (credits/receivables owed to you by others) inside a consolidated table:</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/debts_credits.png" alt="Credits & Debts Ledger Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 4: Credits & Debts Ledger table showing outstanding debt liabilities and credit receivables.</div>
+      </div>
+
+      <h3>Asset and Liability Distinctions</h3>
+      <ul>
+        <li><strong>Record Types:</strong> Save entries as either a <em>Debt</em> (liability, you owe) or a <em>Credit</em> (receivable, others owe you). Credit balances display in green, and debt balances display in red.</li>
+        <li><strong>Repayment & Receipt Actions:</strong> Click the action button beside a record:
+          <ul>
+            <li>For <strong>Debt</strong>: Clicking <em>Repay</em> opens the ledger modal as an expense to pay down your liability.</li>
+            <li>For <strong>Credit</strong>: Clicking <em>Receive</em> opens the ledger modal as an income to record funds returned.</li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="info-callout">
+        <strong>💸 Bank Flow Adjustments</strong>
+        <p>When adding a record, you can choose to make an immediate <strong>Bank Flow Adjustment</strong>. Taking a cash loan instantly deposits the amount to your chosen bank account (recording an inflow transaction). Lending cash immediately deducts the amount from your chosen bank account (recording an outflow transaction).</p>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 6: ANNUAL SUMMARY -->
+    <div class="section-block" id="annual">
+      <h2>📅 6. Annual Summary Overview</h2>
+      <p>The **Annual Summary** provides long-term financial trends across the current calendar year. It tallies YTD balances, cumulative savings, and tracks progress across categories:</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/annual_summary.png" alt="Annual Summary Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 5: Annual summary layout showing YTD trends and category aggregates.</div>
+      </div>
+
+      <h3>Long-term Performance Tracking</h3>
+      <p>Review the double-bar chart showing actual Income vs. actual Spending alongside a Net Savings percentage line. As you select different months, annual aggregates recalculate dynamically, enabling long-term forecasting.</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 7: SAVINGS GOALS -->
+    <div class="section-block" id="goals">
+      <h2>🎯 7. Savings Goals & Suggestion Engine</h2>
+      <p>The **Savings Goals Vault** helps you build wealth by locking down funds for specific items. The vault supports inline creation to streamline configuration:</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/savings_goals.png" alt="Savings Goals Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 6: Active Savings Goals cards showing dynamic cover illustrations.</div>
+      </div>
+
+      <h3>Smart API Autocomplete</h3>
+      <p>When typing in the <em>Add Savings Goal</em> modal, background workers query the DuckDuckGo Instant Answer API. If a price is detected in USD, it is converted dynamically at the active rate to PKR and displayed as a clickable suggestion pill. Selecting the pill fills the budget field instantly. The card then queries Wikipedia for catalog cover photos.</p>
+
+      <div class="info-callout">
+        <strong>🎹 Instrument Brand Mappings</strong>
+        <p>If the goal name contains keyboard/piano brand terms (e.g. Yamaha, Casio, Roland, Korg), the system will suggest catalog price fallbacks and assign musical graphics while ignoring transport vehicles.</p>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 8: FINANCIAL TOOLS -->
+    <div class="section-block" id="tools">
+      <h2>🛠️ 8. Consolidated Financial Tools Panel</h2>
+      <p>The **Financial Tools** tab acts as an advanced sandbox containing four specialized dashboards:</p>
+
+      <!-- SUBTAB 8.1: INSIGHTS -->
+      <h3>8.1 Smart Insights & Health Score</h3>
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/tools_insights.png" alt="Smart Insights Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 7: SVG health score gauges and rolling 3-month anomaly lists.</div>
+      </div>
+      <p>Smart Insights assesses your overall budget compliance. It features a radial Financial Health Score gauge, a Discretionary Burn Speedometer comparing spend pace to calendar days, and rolling anomaly cards pointing out categories experiencing spending spikes.</p>
+
+      <div class="page-break"></div>
+
+      <!-- SUBTAB 8.2: WHAT-IF -->
+      <h3>8.2 What-If Sandbox Simulator</h3>
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/tools_sandbox.png" alt="What-If Sandbox Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 8: Simulation engine displaying sacrifice tables and savings projections.</div>
+      </div>
+      <p>Hypothetically model costs before spending. Under **Shared Sacrifice**, the simulator calculates equal, proportional cuts across all budgets. Under **Targeted Sacrifice**, you select categories to divide the cost, checking proposed balances in real-time.</p>
+
+      <div class="page-break"></div>
+
+      <!-- SUBTAB 8.3: HESITATION -->
+      <h3>8.3 Impulse Buy Hesitation Vault</h3>
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/tools_vault.png" alt="Purchase Hesitation Vault Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 9: 48-Hour cool-down lock and hourly wage comparison cards.</div>
+      </div>
+      <p>Lock impulses away for 48 hours. The vault translates the cost of the item into equivalent work hours based on your salary, displaying ticking cool-down countdown timers. Use the "Test Unlock" button during setup to bypass the countdown for testing.</p>
+
+      <div class="page-break"></div>
+
+      <!-- SUBTAB 8.4: JOY MAPPING -->
+      <h3>8.4 Joy Mapping & End-of-Month PDF Reports</h3>
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/tools_joy.png" alt="Joy Mapping Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 10: Joy and Remorse transaction rater with PDF export triggers.</div>
+      </div>
+      <p>Map your purchases to 👍 Joy or 👎 Remorse. The system tracks your monthly remorse rate and category regrets. You can click <strong>Download PDF Report</strong> to output a clean statement detailing budget scores and ledger activities.</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- SECTION 9: SETUP & CONFIG -->
+    <div class="section-block" id="setup">
+      <h2>⚙️ 9. System Configurations</h2>
+      <p>The **Setup & Config** page is where you configure the base parameters of the system. Modify, delete, or append data fields:</p>
+
+      <div class="screenshot-wrapper">
+        <img src="manual_assets/setup_config.png" alt="Setup & Config Screenshot" class="screenshot">
+        <div class="screenshot-caption">Figure 11: Setup and configurations panel for categories and account structures.</div>
+      </div>
+
+      <table class="doc-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Configuration Card</th>
+            <th>Description & Operations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Expense Categories</strong></td>
+            <td>Manage category tags. Creating new categories automatically updates budget spreadsheets.</td>
+          </tr>
+          <tr>
+            <td><strong>Income Sources</strong></td>
+            <td>Add source names to categorize fixed and variable incoming cash flows.</td>
+          </tr>
+          <tr>
+            <td><strong>Bank Directory</strong></td>
+            <td>Declare Bank Names, Account Types (Savings, Current, Cash), and purposes. Balance aggregates sync in-place.</td>
+          </tr>
+          <tr>
+            <td><strong>Data Backup</strong></td>
+            <td>Export your entire workspace state as a JSON file, or import backups to restore states instantly.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FOOTER BLOCK -->
+    <div class="footer">
+      <p>© ElectroPlanet.pk Enterprises. All Rights Reserved.</p>
+      <p style="font-size: 10px; margin-top: 4px; color: var(--text-muted);">Printed from Totality Finance digital dashboard client terminal.</p>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -3722,8 +3722,8 @@ function switchTab(tabId) {
       // Force reflow
       widget.offsetHeight;
 
-      // Play (smooth slide animation with a subtle bounce and 0.8s duration)
-      widget.style.transition = 'transform 0.8s cubic-bezier(0.34, 1.25, 0.64, 1)';
+      // Play (smooth slide animation with a subtle bounce and 0.73s duration)
+      widget.style.transition = 'transform 0.73s cubic-bezier(0.34, 1.25, 0.64, 1)';
       widget.style.transform = 'translate(0, 0)';
 
       const onTransitionEnd = (e) => {

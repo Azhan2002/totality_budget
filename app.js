@@ -820,7 +820,7 @@ function updateUI() {
   document.getElementById('dash-income').innerText = formatCurrency(metrics.totalIncome);
   document.getElementById('dash-spent').innerText = formatCurrency(metrics.totalSpent);
   document.getElementById('dash-savings').innerText = formatCurrency(metrics.netSavings);
-  document.getElementById('dash-rate').innerText = (metrics.netSavings < 0 ? '-' : '') + metrics.savingsRate + '%';
+  document.getElementById('dash-rate').innerText = metrics.savingsRate + '%';
   
   const savingsValEl = document.getElementById('dash-savings');
   if (metrics.netSavings < 0) {

@@ -3632,6 +3632,20 @@ function renderForecastCharts() {
 // Tab Switching (Resolves visual sync bug on navigation)
 
 function switchTab(tabId) {
+  if (activeTab === tabId) return;
+
+  const widget = document.querySelector('.top-balances-widget');
+  let firstLeft = 0;
+  let firstTop = 0;
+  if (widget) {
+    if (widget._cleanupTransition) {
+      widget._cleanupTransition();
+    }
+    const rect = widget.getBoundingClientRect();
+    firstLeft = rect.left;
+    firstTop = rect.top;
+  }
+
   activeTab = tabId;
 
   // Toggle active CSS panel
@@ -3690,6 +3704,43 @@ function switchTab(tabId) {
       switchSubtab(subtabId);
     } else {
       switchSubtab('tools-insights');
+    }
+  }
+
+  if (widget) {
+    const rect = widget.getBoundingClientRect();
+    const lastLeft = rect.left;
+    const lastTop = rect.top;
+    const deltaX = firstLeft - lastLeft;
+    const deltaY = firstTop - lastTop;
+
+    if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
+      // Invert
+      widget.style.transition = 'none';
+      widget.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+      
+      // Force reflow
+      widget.offsetHeight;
+
+      // Play (smooth slide animation with a subtle bounce and 0.64s duration)
+      widget.style.transition = 'transform 0.64s cubic-bezier(0.34, 1.25, 0.64, 1)';
+      widget.style.transform = 'translate(0, 0)';
+
+      const onTransitionEnd = (e) => {
+        if (e.propertyName === 'transform') {
+          cleanup();
+        }
+      };
+
+      const cleanup = () => {
+        widget.style.transition = '';
+        widget.style.transform = '';
+        widget.removeEventListener('transitionend', onTransitionEnd);
+        widget._cleanupTransition = null;
+      };
+
+      widget._cleanupTransition = cleanup;
+      widget.addEventListener('transitionend', onTransitionEnd);
     }
   }
 }

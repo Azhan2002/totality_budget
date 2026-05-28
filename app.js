@@ -70,6 +70,7 @@ const MONTHS_REF = [
 // Global App State
 let state = { ...DEFAULT_STATE };
 let activeTab = 'dashboard';
+let txModalCategoryManuallyChanged = false;
 
 // Charts Instances
 let expenseChartInstance = null;
@@ -1015,16 +1016,36 @@ function updateUI() {
   document.getElementById('mini-planned-budget').innerText = formatCurrency(totalBudgeted);
   document.getElementById('mini-total-spent').innerText = formatCurrency(totalSpent);
   document.getElementById('mini-leftover-budget').innerText = formatCurrency(totalRemaining);
-  document.getElementById('mini-monthly-income').innerText = formatCurrency(metrics.totalIncome);
 
-  // Fixed expenses and money owed totals (Monthly Budget)
-  const monthlyFixedCost = state.subscriptions.reduce((sum, s) => sum + Number(s.amount), 0);
-  document.getElementById('mini-fixed-expenses').innerText = formatCurrency(monthlyFixedCost);
+  // Expected Net Recurring Flow and money owed totals (Monthly Budget)
+  let netRecurringFlow = 0;
+  (state.subscriptions || []).forEach(sub => {
+    const type = sub.type || 'expense';
+    if (type === 'income') {
+      netRecurringFlow += Number(sub.amount);
+    } else {
+      netRecurringFlow -= Number(sub.amount);
+    }
+  });
+  const netRecurringEl = document.getElementById('mini-expected-net-recurring');
+  if (netRecurringEl) {
+    const isPositive = netRecurringFlow >= 0;
+    netRecurringEl.innerText = (isPositive ? "+ " : "- ") + formatCurrency(Math.abs(netRecurringFlow));
+    netRecurringEl.style.color = isPositive ? 'var(--success)' : 'var(--danger)';
+  }
 
   const totalOwed = state.debts
     .filter(d => d.type !== 'credit')
     .reduce((sum, d) => sum + Number(d.remaining), 0);
   document.getElementById('mini-total-owed').innerText = formatCurrency(totalOwed);
+
+  const totalReceivable = state.debts
+    .filter(d => d.type === 'credit')
+    .reduce((sum, d) => sum + Number(d.remaining), 0);
+  const miniReceivableEl = document.getElementById('mini-total-receivable');
+  if (miniReceivableEl) {
+    miniReceivableEl.innerText = formatCurrency(totalReceivable);
+  }
 
   // Recent transactions mini-list (for active month)
   const miniTxList = document.getElementById('mini-tx-list');
@@ -1110,6 +1131,11 @@ function updateUI() {
     .filter(d => d.type !== 'credit')
     .reduce((sum, d) => sum + Number(d.remaining), 0);
   document.getElementById('annual-total-debt').innerText = formatCurrency(annualTotalOwed);
+
+  const annualTotalReceivable = state.debts
+    .filter(d => d.type === 'credit')
+    .reduce((sum, d) => sum + Number(d.remaining), 0);
+  document.getElementById('annual-total-receivable').innerText = formatCurrency(annualTotalReceivable);
 
   const annualFixedSpent = state.transactions
     .filter(tx => tx.recurringId && tx.type === 'expense')
@@ -3641,8 +3667,11 @@ function switchTab(tabId) {
     document.getElementById('page-subtitle').innerText = titles[tabId].subtitle;
   }
 
-  // Scroll to top
-  window.scrollTo(0, 0);
+  // Scroll to top of the right panel
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    mainContent.scrollTop = 0;
+  }
 
   // Trigger absolute UI redraw for navigated tab
   updateUI();
@@ -3812,6 +3841,7 @@ const cancelTxModal = document.getElementById('cancel-tx-modal');
 
 function openAddTxModal(defaultType = 'expense', preselectedGoalId = null) {
   txForm.reset();
+  txModalCategoryManuallyChanged = false;
   
   // Set date based on selected month (best UX)
   const activeMonth = state.selectedMonth; // YYYY-MM
@@ -3985,17 +4015,183 @@ function openDepositToGoalModal(goalId) {
   openAddTxModal('goal_allocation', goalId);
 }
 
+// Auto-categorize transaction description based on keywords
+function autoCategorizeTxDescription() {
+  if (txModalCategoryManuallyChanged) return;
+
+  const type = document.getElementById('tx-type').value;
+  if (type !== 'expense' && type !== 'income') return;
+
+  const descVal = document.getElementById('tx-desc').value.toLowerCase().trim();
+  if (!descVal) return;
+
+  const descCategoryMapping = {
+    // Grocery
+    'pringles': 'Grocery',
+    'coke': 'Grocery',
+    'lays': 'Grocery',
+    'chips': 'Grocery',
+    'grocery': 'Grocery',
+    'groceries': 'Grocery',
+    'supermarket': 'Grocery',
+    'al fatah': 'Grocery',
+    'hyperstar': 'Grocery',
+    'carrefour': 'Grocery',
+    'milk': 'Grocery',
+    'bread': 'Grocery',
+    'eggs': 'Grocery',
+    'water': 'Grocery',
+    'snacks': 'Grocery',
+    'food': 'Grocery',
+    'mart': 'Grocery',
+    'store': 'Grocery',
+    'nestle': 'Grocery',
+    'chicken': 'Grocery',
+    'vegetables': 'Grocery',
+    'fruit': 'Grocery',
+    'yogurt': 'Grocery',
+    'cheese': 'Grocery',
+    'biscuit': 'Grocery',
+    'chocolate': 'Grocery',
+    
+    // Petrol
+    'petrol': 'Petrol',
+    'fuel': 'Petrol',
+    'shell': 'Petrol',
+    'pso': 'Petrol',
+    'hassan': 'Petrol',
+    'total': 'Petrol',
+    'cng': 'Petrol',
+    'gas': 'Petrol',
+    
+    // Daily
+    'daily': 'Daily',
+    
+    // Order Out
+    'order out': 'Order Out',
+    'foodpanda': 'Order Out',
+    'kfc': 'Order Out',
+    'mcdonald': 'Order Out',
+    'burger': 'Order Out',
+    'pizza': 'Order Out',
+    'restaurant': 'Order Out',
+    'dinner': 'Order Out',
+    'delivery': 'Order Out',
+    'panda': 'Order Out',
+    
+    // Daily Lunch
+    'lunch': 'Daily Lunch',
+    'office lunch': 'Daily Lunch',
+    'subway': 'Daily Lunch',
+    'cafe': 'Daily Lunch',
+    
+    // Car Maintenance
+    'car': 'Car Maintenance',
+    'maintenance': 'Car Maintenance',
+    'tuning': 'Car Maintenance',
+    'oil change': 'Car Maintenance',
+    'mechanic': 'Car Maintenance',
+    'tyre': 'Car Maintenance',
+    'tire': 'Car Maintenance',
+    'brake': 'Car Maintenance',
+    'workshop': 'Car Maintenance',
+    
+    // Clothes
+    'clothes': 'Clothes',
+    'shirt': 'Clothes',
+    'pants': 'Clothes',
+    'shoes': 'Clothes',
+    'wardrobe': 'Clothes',
+    'boutique': 'Clothes',
+    'outfitters': 'Clothes',
+    'khaadi': 'Clothes',
+    
+    // Mobile
+    'mobile': 'Mobile',
+    'load': 'Mobile',
+    'ufone': 'Mobile',
+    'jazz': 'Mobile',
+    'telenor': 'Mobile',
+    'zong': 'Mobile',
+    'bill': 'Mobile',
+    'cellular': 'Mobile',
+    'internet': 'Mobile',
+    'wifi': 'Mobile',
+    
+    // Uber
+    'uber': 'Uber',
+    'indrive': 'Uber',
+    'yango': 'Uber',
+    'careem': 'Uber',
+    'ride': 'Uber',
+    'taxi': 'Uber',
+    
+    // Gym
+    'gym': 'Gym',
+    'fitness': 'Gym',
+    'workout': 'Gym',
+    'protein': 'Gym',
+    'supplement': 'Gym',
+    
+    // Charity
+    'charity': 'Charity',
+    'donation': 'Charity',
+    'zakat': 'Charity',
+    'sadqah': 'Charity',
+    'edhi': 'Charity',
+    'saylani': 'Charity',
+    
+    // Income Sources
+    'coca cola': 'Coca Cola',
+    'extra': 'Extra / EP',
+    'tuition': 'Tuition',
+    'salary': 'Coca Cola'
+  };
+
+  let suggestedCategory = null;
+  for (const [kw, catName] of Object.entries(descCategoryMapping)) {
+    if (descVal.includes(kw)) {
+      suggestedCategory = catName;
+      break;
+    }
+  }
+
+  if (suggestedCategory) {
+    const catSelect = document.getElementById('tx-category');
+    if (catSelect) {
+      const exists = Array.from(catSelect.options).some(opt => opt.value === suggestedCategory);
+      if (exists && catSelect.value !== suggestedCategory) {
+        catSelect.value = suggestedCategory;
+        catSelect.dispatchEvent(new Event('change'));
+      }
+    }
+
+    if (suggestedCategory === 'Grocery' || suggestedCategory === 'Daily' || suggestedCategory === 'Daily Lunch' || suggestedCategory === 'Order Out') {
+      const accSelect = document.getElementById('tx-account');
+      if (accSelect && Array.from(accSelect.options).some(opt => opt.value === 'scb')) {
+        if (accSelect.value !== 'scb') {
+          accSelect.value = 'scb';
+          accSelect.dispatchEvent(new Event('change'));
+        }
+      }
+    }
+  }
+}
+
 // Bind Modal Listeners
 if (addTxBtn) addTxBtn.addEventListener('click', () => openAddTxModal('expense'));
 if (closeTxModal) closeTxModal.addEventListener('click', closeTransactionModal);
 if (cancelTxModal) cancelTxModal.addEventListener('click', closeTransactionModal);
 document.getElementById('tx-type').addEventListener('change', (e) => {
   handleTxTypeFieldsVisibility(e.target.value);
+  txModalCategoryManuallyChanged = false;
 });
 document.getElementById('tx-category').addEventListener('change', (e) => {
   const type = document.getElementById('tx-type').value;
   handleTxCategoryVisibility(type, e.target.value);
+  txModalCategoryManuallyChanged = true;
 });
+document.getElementById('tx-desc').addEventListener('input', autoCategorizeTxDescription);
 
 txForm.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -4557,7 +4753,7 @@ window.openRepayDebtModal = openRepayDebtModal;
 window.updateTodayDateDisplay = updateTodayDateDisplay;
 
 // Top Bar Masked Balances State & Functions
-let balancesVisible = localStorage.getItem('totality_balances_visible') === 'true';
+let balancesVisible = false;
 
 function toggleTopBalancesVisibility() {
   balancesVisible = !balancesVisible;

@@ -307,16 +307,16 @@
                   <span id="mini-leftover-budget">Rs. 0</span>
                 </div>
                 <div class="stat-mini-item">
-                  <span>🔒 Monthly Income:</span>
-                  <span id="mini-monthly-income">Rs. 0</span>
+                  <span>🔁 Expected Net Recurring Flow:</span>
+                  <span id="mini-expected-net-recurring">Rs. 0</span>
                 </div>
                 <div class="stat-mini-item">
-                  <span>🔁 Fixed Expenses:</span>
-                  <span id="mini-fixed-expenses">Rs. 0</span>
+                  <span>🤝 Total Owed (Liabilities):</span>
+                  <span id="mini-total-owed" style="color: var(--danger); font-weight: 600;">Rs. 0</span>
                 </div>
                 <div class="stat-mini-item">
-                  <span>🤝 Total Money Owed:</span>
-                  <span id="mini-total-owed">Rs. 0</span>
+                  <span>💵 Total Receivable (Credits):</span>
+                  <span id="mini-total-receivable" style="color: var(--success); font-weight: 600;">Rs. 0</span>
                 </div>
               </div>
             </div>
@@ -376,8 +376,17 @@
               <i data-lucide="users"></i>
             </div>
             <div class="metric-info">
-              <span class="metric-label">Outstanding Loans (Debt)</span>
-              <span class="metric-val" id="annual-total-debt">Rs. 0</span>
+              <span class="metric-label">Outstanding Owed (Debts)</span>
+              <span class="metric-val" id="annual-total-debt" style="color: var(--danger); font-weight: 700;">Rs. 0</span>
+            </div>
+          </div>
+          <div class="card metric-card">
+            <div class="metric-icon income">
+              <i data-lucide="arrow-up-right"></i>
+            </div>
+            <div class="metric-info">
+              <span class="metric-label">Receivables Pending (Credits)</span>
+              <span class="metric-val" id="annual-total-receivable" style="color: var(--success); font-weight: 700;">Rs. 0</span>
             </div>
           </div>
           <div class="card metric-card">

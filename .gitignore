@@ -1,4 +1,20 @@
+# OS metadata
 .DS_Store
 Thumbs.db
 *.tmp
 *.log
+
+# Archives & Installers
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

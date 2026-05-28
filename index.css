@@ -107,7 +107,6 @@
   color: #ffffff;
   background-color: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.18);
-  transform: translateX(3px);
 }
 
 [data-theme="light"] .sidebar .nav-link.active {
@@ -229,9 +228,6 @@ body::before {
   transition: var(--transition-bounce);
 }
 
-.brand-logo-img:hover {
-  transform: scale(1.08) rotate(5deg);
-}
 
 .brand-name {
   font-family: var(--font-heading);
@@ -278,7 +274,11 @@ body::before {
   color: var(--text-main);
   background-color: var(--bg-card);
   border-color: var(--border-color);
-  transform: translateX(6px) scale(1.02);
+}
+
+.nav-link:hover,
+.nav-link.active {
+  transform: translateX(4px) scale(1.01);
 }
 
 .nav-link.active {
@@ -290,7 +290,6 @@ body::before {
 
 .nav-link.active svg {
   color: white;
-  transform: scale(1.1);
 }
 
 /* Sidebar Footer */

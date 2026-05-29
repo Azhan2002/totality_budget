@@ -570,9 +570,7 @@ let activeProfileId = 'default';
 
 function normalizeLoadedState() {
   if (!state) state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-  if (!state.selectedMonth || !/^\d{4}-\d{2}$/.test(state.selectedMonth)) {
-    state.selectedMonth = getRealCurrentMonthStr();
-  }
+  state.selectedMonth = getRealCurrentMonthStr();
   if (!state.categories) state.categories = DEFAULT_STATE.categories;
   if (!state.monthlyBudgets) state.monthlyBudgets = DEFAULT_STATE.monthlyBudgets;
   if (!state.incomeSources) state.incomeSources = DEFAULT_STATE.incomeSources;

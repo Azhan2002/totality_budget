@@ -3648,6 +3648,14 @@ function switchTab(tabId) {
 
   activeTab = tabId;
 
+  // Close mobile sidebar drawer on tab switch
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (sidebar && sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  }
+
   // Toggle active CSS panel
   document.querySelectorAll('.tab-panel').forEach(panel => {
     panel.classList.remove('active');
@@ -4821,6 +4829,7 @@ function updateTopBalancesDisplay() {
   const netCashEl = document.getElementById('top-net-cash');
   const dailySpendEl = document.getElementById('top-daily-spend');
   const eyeIcon = document.getElementById('top-balances-eye-icon');
+  const mobileEyeIcon = document.getElementById('mobile-eye-icon');
   
   if (netCashEl && dailySpendEl) {
     if (balancesVisible) {
@@ -4829,15 +4838,22 @@ function updateTopBalancesDisplay() {
       if (eyeIcon) {
         eyeIcon.setAttribute('data-lucide', 'eye-off');
       }
+      if (mobileEyeIcon) {
+        mobileEyeIcon.setAttribute('data-lucide', 'eye-off');
+      }
     } else {
       netCashEl.innerText = '••••••';
       dailySpendEl.innerText = '••••••';
       if (eyeIcon) {
         eyeIcon.setAttribute('data-lucide', 'eye');
       }
+      if (mobileEyeIcon) {
+        mobileEyeIcon.setAttribute('data-lucide', 'eye');
+      }
     }
-    if (eyeIcon && typeof lucide !== 'undefined') {
-      lucide.createIcons({ nodes: [eyeIcon] });
+    if (typeof lucide !== 'undefined') {
+      if (eyeIcon) lucide.createIcons({ nodes: [eyeIcon] });
+      if (mobileEyeIcon) lucide.createIcons({ nodes: [mobileEyeIcon] });
     }
   }
 }
@@ -4972,9 +4988,40 @@ window.addEventListener('DOMContentLoaded', () => {
   if (toggleBtn) {
     toggleBtn.addEventListener('click', toggleTopBalancesVisibility);
   }
+  
+  // Mobile Top Balances Eye Toggle
+  const mobileEyeBtn = document.getElementById('mobile-eye-btn');
+  if (mobileEyeBtn) {
+    mobileEyeBtn.addEventListener('click', toggleTopBalancesVisibility);
+  }
+
   updateTopBalancesDisplay();
   
   lucide.createIcons();
+
+  // Mobile menu toggle listeners
+  const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  
+  if (mobileMenuBtn && sidebar && sidebarOverlay) {
+    mobileMenuBtn.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('active');
+    });
+    
+    sidebarOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('active');
+    });
+  }
+
+  // Register PWA Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registered successfully:', reg.scope))
+      .catch(err => console.error('Service Worker registration failed:', err));
+  }
 
   // Tools subtab navigation event listener
   document.addEventListener('click', (e) => {

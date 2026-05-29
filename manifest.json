@@ -1,0 +1,18 @@
+{
+  "name": "Totality Budget",
+  "short_name": "Totality",
+  "description": "Personal Finance Dashboard & Budget Planner",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#E4002B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

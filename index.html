@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Totality Budget — Personal Finance Tracker</title>
   <link rel="shortcut icon" type="image/png" href="logo.png">
   <link rel="icon" type="image/png" href="logo.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="index.css?v=4">
   <!-- ChartJS CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,6 +15,22 @@
 </head>
 <body>
   <div class="app-container">
+    <!-- Mobile Header Top Bar -->
+    <header class="mobile-header">
+      <button id="mobile-menu-btn" class="mobile-icon-btn" title="Open Navigation">
+        <i data-lucide="menu"></i>
+      </button>
+      <div class="mobile-brand">
+        <img src="logo.png" class="mobile-logo-img" alt="Logo">
+        <span class="mobile-brand-name">Totality</span>
+      </div>
+      <button id="mobile-eye-btn" class="mobile-icon-btn" title="Toggle Balances">
+        <i id="mobile-eye-icon" data-lucide="eye"></i>
+      </button>
+    </header>
+
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     
     <!-- Sidebar Navigation -->
     <aside class="sidebar">

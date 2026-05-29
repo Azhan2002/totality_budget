@@ -147,6 +147,50 @@
   color: #ffffff;
 }
 
+/* Light Mode Settings Button Overrides */
+[data-theme="light"] .sidebar .settings-toggle-btn {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .sidebar .settings-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.22) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+[data-theme="light"] .sidebar .settings-toggle-btn.active {
+  background-color: #ffffff !important;
+  border-color: #ffffff !important;
+  color: var(--primary) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+[data-theme="light"] .sidebar .settings-toggle-btn svg {
+  color: inherit !important;
+}
+
+/* Light Mode Profile Selector Overrides */
+[data-theme="light"] .sidebar .profile-selector-container label {
+  color: #ffffff !important;
+}
+[data-theme="light"] .sidebar #profile-select,
+[data-theme="light"] .sidebar #add-profile-btn {
+  background-color: #ffffff !important;
+  border: 1px solid #ffffff !important;
+  color: var(--primary) !important;
+}
+[data-theme="light"] .sidebar #profile-select:hover,
+[data-theme="light"] .sidebar #add-profile-btn:hover {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #ffffff !important;
+}
+[data-theme="light"] .sidebar #add-profile-btn svg {
+  color: var(--primary) !important;
+}
+[data-theme="light"] .sidebar #profile-select option {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -217,7 +261,7 @@ body::before {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 32px;
+  margin-bottom: 20px;
 }
 
 .brand-logo-img {
@@ -292,6 +336,28 @@ body::before {
   color: white;
 }
 
+/* ─── Profile Selector ─── */
+.profile-selector-container label {
+  color: #ffffff !important;
+}
+
+#profile-select, #add-profile-btn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  transition: var(--transition-bounce);
+}
+
+#profile-select:hover, #add-profile-btn:hover {
+  border-color: var(--primary);
+  background-color: var(--bg-card-hover);
+}
+
+#profile-select option {
+  background-color: var(--bg-card);
+  color: var(--text-color);
+}
+
 /* Sidebar Footer */
 .sidebar-footer {
   display: flex;
@@ -307,7 +373,8 @@ body::before {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  padding: 11px;
+  height: 42px;
+  padding: 0 11px;
   border-radius: var(--btn-radius);
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
@@ -316,6 +383,7 @@ body::before {
   font-weight: 500;
   cursor: pointer;
   transition: var(--transition-bounce);
+  box-sizing: border-box;
 }
 
 .theme-toggle-btn:hover {
@@ -334,7 +402,8 @@ body::before {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  padding: 11px;
+  height: 42px;
+  padding: 0 11px;
   border-radius: var(--btn-radius);
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
@@ -360,6 +429,57 @@ body::before {
 .manual-link svg {
   width: 16px;
   height: 16px;
+}
+
+.settings-toggle-btn {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: var(--btn-radius) !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  cursor: pointer;
+  transition: var(--transition-bounce) !important;
+  box-sizing: border-box;
+}
+
+.settings-toggle-btn:hover {
+  background-color: var(--bg-card-hover) !important;
+  border-color: var(--border-color-hover) !important;
+  color: var(--text-main) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+}
+
+.settings-toggle-btn:active {
+  transform: translateY(0) scale(0.95) !important;
+}
+
+.settings-toggle-btn.active {
+  color: white !important;
+  background-color: #E4002B !important;
+  border-color: #E4002B !important;
+  box-shadow: 0 4px 20px rgba(228, 0, 43, 0.3) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+}
+
+.settings-toggle-btn.active:active {
+  transform: translateY(0) scale(0.95) !important;
+}
+
+.settings-toggle-btn svg {
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  transition: transform 0.5s ease !important;
+}
+
+.settings-toggle-btn:hover svg {
+  transform: rotate(45deg) !important;
 }
 
 /* ─── Main Content ─── */
@@ -390,10 +510,10 @@ body::before {
 .top-balances-widget {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 500;
@@ -461,17 +581,22 @@ body::before {
 .action-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+}
+
+.action-bar .btn {
+  padding: 8px 14px;
+  font-size: 13px;
 }
 
 .month-selector {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   color: var(--text-main);
-  padding: 9px 14px;
+  padding: 8px 10px;
   border-radius: var(--btn-radius);
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   outline: none;
   cursor: pointer;
   transition: var(--transition);
@@ -1417,7 +1542,7 @@ body::before {
 /* ─── Setup Rows ─── */
 .setup-acc-row {
   display: grid;
-  grid-template-columns: 1.2fr 1.2fr 1fr 2.5fr auto;
+  grid-template-columns: 1fr 1fr 0.8fr 0.8fr 1.5fr auto;
   gap: 10px;
   align-items: center;
   margin-bottom: 10px;

@@ -1,8 +1,16 @@
 // Totality Finance App Logic
 
+// Function to get real-world current month in YYYY-MM format
+function getRealCurrentMonthStr() {
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = (today.getMonth() + 1).toString().padStart(2, '0');
+  return `${currentYear}-${currentMonth}`;
+}
+
 // Default initial state (replicated from TOTALITY_v2.xlsx & User Preferences)
 const DEFAULT_STATE = {
-  selectedMonth: "2026-05", // Default month
+  selectedMonth: getRealCurrentMonthStr(), // Default month dynamically set to real-world current month
   categories: [
     { name: "Car Maintenance", budget: 10000 },
     { name: "Grocery", budget: 5000 },
@@ -24,10 +32,10 @@ const DEFAULT_STATE = {
   monthlyBudgets: {}, // Maps month key ("YYYY-MM") -> { categoryName: budgetAmount }
   incomeSources: ["Coca Cola", "Extra / EP", "Miscellaneous", "Tuition"],
   bankAccounts: [
-    { id: "scb", name: "Standard Chartered", bank: "Standard Chartered", type: "Current", purpose: "Salary / Daily Spend", balance: 0 },
-    { id: "allied", name: "Allied Bank", bank: "Allied Bank", type: "Savings", purpose: "Savings", balance: 0 },
-    { id: "askari", name: "Askari Bank", bank: "Askari Bank", type: "Current", purpose: "Business / Excess Income", balance: 0 },
-    { id: "cash", name: "Cash", bank: "Physical Cash", type: "Cash", purpose: "Daily cash spending", balance: 0 }
+    { id: "scb", name: "Standard Chartered", bank: "Standard Chartered", type: "Current", purpose: "Salary / Daily Spend", balance: 0, initialBalance: 0 },
+    { id: "allied", name: "Allied Bank", bank: "Allied Bank", type: "Savings", purpose: "Savings", balance: 0, initialBalance: 0 },
+    { id: "askari", name: "Askari Bank", bank: "Askari Bank", type: "Current", purpose: "Business / Excess Income", balance: 0, initialBalance: 0 },
+    { id: "cash", name: "Cash", bank: "Physical Cash", type: "Cash", purpose: "Daily cash spending", balance: 0, initialBalance: 0 }
   ],
   savingsGoals: [
     { id: "goal_1", name: "Asus Laptop", target: 70000, saved: 0, targetDate: "2026-12-31", account: "allied" },
@@ -51,21 +59,25 @@ const DEFAULT_STATE = {
   wishlist: []
 };
 
-// Months reference for 2026
-const MONTHS_REF = [
-  { key: "2026-01", name: "January" },
-  { key: "2026-02", name: "February" },
-  { key: "2026-03", name: "March" },
-  { key: "2026-04", name: "April" },
-  { key: "2026-05", name: "May" },
-  { key: "2026-06", name: "June" },
-  { key: "2026-07", name: "July" },
-  { key: "2026-08", name: "August" },
-  { key: "2026-09", name: "September" },
-  { key: "2026-10", name: "October" },
-  { key: "2026-11", name: "November" },
-  { key: "2026-12", name: "December" }
-];
+// Months reference (updated dynamically based on selected year)
+let MONTHS_REF = [];
+function updateMonthsRef() {
+  const selectedYear = (state && state.selectedMonth) ? state.selectedMonth.split('-')[0] : "2026";
+  MONTHS_REF = [
+    { key: `${selectedYear}-01`, name: "January" },
+    { key: `${selectedYear}-02`, name: "February" },
+    { key: `${selectedYear}-03`, name: "March" },
+    { key: `${selectedYear}-04`, name: "April" },
+    { key: `${selectedYear}-05`, name: "May" },
+    { key: `${selectedYear}-06`, name: "June" },
+    { key: `${selectedYear}-07`, name: "July" },
+    { key: `${selectedYear}-08`, name: "August" },
+    { key: `${selectedYear}-09`, name: "September" },
+    { key: `${selectedYear}-10`, name: "October" },
+    { key: `${selectedYear}-11`, name: "November" },
+    { key: `${selectedYear}-12`, name: "December" }
+  ];
+}
 
 // Global App State
 let state = { ...DEFAULT_STATE };
@@ -82,6 +94,60 @@ let comparisonChartInstance = null;
 // Helpers
 function formatCurrency(amount) {
   return "Rs. " + Number(amount).toLocaleString('en-US');
+}
+
+function animateNumber(elementId, targetValue, isPercent = false) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  
+  if (el.innerText.includes('•')) {
+    if (isPercent) {
+      el.innerText = targetValue + '%';
+    } else {
+      el.innerText = formatCurrency(targetValue);
+    }
+    return;
+  }
+  
+  let startValue = 0;
+  // Correctly strip "Rs.", "Rs", commas, and percentage signs, then parse to support negative & decreasing changes
+  const currentText = el.innerText.replace(/Rs\./g, '').replace(/Rs/g, '').replace(/,/g, '').replace(/%/g, '').trim();
+  const parsedVal = parseFloat(currentText);
+  if (!isNaN(parsedVal)) {
+    startValue = parsedVal;
+  }
+  
+  if (startValue === targetValue) {
+    return;
+  }
+
+  const duration = 800;
+  const startTimestamp = performance.now();
+  
+  function step(now) {
+    const elapsed = now - startTimestamp;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeProgress = progress * (2 - progress);
+    const currentValue = startValue + (targetValue - startValue) * easeProgress;
+    
+    if (isPercent) {
+      el.innerText = Math.round(currentValue) + '%';
+    } else {
+      el.innerText = formatCurrency(Math.round(currentValue));
+    }
+    
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      if (isPercent) {
+        el.innerText = targetValue + '%';
+      } else {
+        el.innerText = formatCurrency(targetValue);
+      }
+    }
+  }
+  
+  requestAnimationFrame(step);
 }
 
 // ─── Goal Relevant Images keyword mapping ───
@@ -498,52 +564,163 @@ function updateMonthlyBudget(month, categoryName, newValue) {
 }
 
 // Local Storage Sync
-function loadState() {
-  const savedState = localStorage.getItem('totality_finance_state');
-  if (savedState) {
-    try {
-      state = JSON.parse(savedState);
-      
-      // Verification & Merging
-      if (!state.selectedMonth) state.selectedMonth = DEFAULT_STATE.selectedMonth;
-      if (!state.categories) state.categories = DEFAULT_STATE.categories;
-      if (!state.monthlyBudgets) state.monthlyBudgets = DEFAULT_STATE.monthlyBudgets;
-      if (!state.incomeSources) state.incomeSources = DEFAULT_STATE.incomeSources;
-      if (!state.bankAccounts) state.bankAccounts = DEFAULT_STATE.bankAccounts;
-      if (!state.savingsGoals) state.savingsGoals = DEFAULT_STATE.savingsGoals;
-      if (!state.subscriptions) state.subscriptions = DEFAULT_STATE.subscriptions || [];
-      if (!state.debts) state.debts = DEFAULT_STATE.debts || [];
-      if (!state.deletedRecurring) state.deletedRecurring = DEFAULT_STATE.deletedRecurring || [];
-      if (!state.transactions) state.transactions = DEFAULT_STATE.transactions;
-      if (!state.wishlist) state.wishlist = [];
+// Local Storage Sync & Multi-Profile Support
+let profiles = [];
+let activeProfileId = 'default';
 
-      // Schema Migration: reset if coming from any old schema
-      // Check for old 'daily_ops' id OR missing 'scb' id (both mean old pre-v2 data)
-      const hasOldAccounts = state.bankAccounts.some(acc => acc.id === 'daily_ops');
-      const hasSCB = state.bankAccounts.some(acc => acc.id === 'scb');
-      if (hasOldAccounts || (!hasSCB && state.bankAccounts.length > 0 && !state._schemaVersion)) {
-        console.log("Schema migration: resetting state to new default SCB/Allied bank accounts.");
-        state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-        state._schemaVersion = 2;
-        saveState();
-      }
-      if (!state._schemaVersion) {
-        state._schemaVersion = 2;
-        saveState();
-      }
-    } catch (e) {
-      console.error("Failed to parse state, resetting", e);
-      state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-      state._schemaVersion = 2;
-    }
-  } else {
+function normalizeLoadedState() {
+  if (!state) state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  if (!state.selectedMonth || !/^\d{4}-\d{2}$/.test(state.selectedMonth)) {
+    state.selectedMonth = getRealCurrentMonthStr();
+  }
+  if (!state.categories) state.categories = DEFAULT_STATE.categories;
+  if (!state.monthlyBudgets) state.monthlyBudgets = DEFAULT_STATE.monthlyBudgets;
+  if (!state.incomeSources) state.incomeSources = DEFAULT_STATE.incomeSources;
+  if (!state.bankAccounts) state.bankAccounts = DEFAULT_STATE.bankAccounts;
+  if (!state.savingsGoals) state.savingsGoals = DEFAULT_STATE.savingsGoals;
+  if (!state.subscriptions) state.subscriptions = DEFAULT_STATE.subscriptions || [];
+  if (!state.debts) state.debts = DEFAULT_STATE.debts || [];
+  if (!state.deletedRecurring) state.deletedRecurring = DEFAULT_STATE.deletedRecurring || [];
+  if (!state.transactions) state.transactions = DEFAULT_STATE.transactions;
+  if (!state.wishlist) state.wishlist = [];
+
+  // Schema Migration
+  const hasOldAccounts = state.bankAccounts.some(acc => acc.id === 'daily_ops');
+  if (hasOldAccounts) {
+    console.log("Schema migration: resetting state to new default SCB/Allied bank accounts.");
     state = JSON.parse(JSON.stringify(DEFAULT_STATE));
     state._schemaVersion = 2;
   }
+  if (!state._schemaVersion) {
+    state._schemaVersion = 2;
+  }
+  updateMonthsRef();
+}
+
+function loadProfiles() {
+  const savedProfiles = localStorage.getItem('totality_finance_profiles');
+  const savedActiveId = localStorage.getItem('totality_active_profile_id');
+  
+  if (savedProfiles) {
+    try {
+      profiles = JSON.parse(savedProfiles);
+    } catch (e) {
+      console.error("Failed to parse profiles", e);
+      profiles = [];
+    }
+  }
+  
+  if (savedActiveId) {
+    activeProfileId = savedActiveId;
+  }
+  
+  // If no profiles exist, migrate the current single-user state if present
+  if (profiles.length === 0) {
+    const savedState = localStorage.getItem('totality_finance_state');
+    if (savedState) {
+      try {
+        state = JSON.parse(savedState);
+        normalizeLoadedState();
+      } catch (e) {
+        state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      }
+    } else {
+      state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    }
+    
+    const defaultProfile = {
+      id: 'profile_default',
+      name: 'Azhan',
+      state: { ...state }
+    };
+    profiles.push(defaultProfile);
+    activeProfileId = defaultProfile.id;
+    saveProfiles();
+  } else {
+    let activeProfile = profiles.find(p => p.id === activeProfileId);
+    if (!activeProfile) {
+      activeProfile = profiles[0];
+      activeProfileId = activeProfile.id;
+    }
+    state = activeProfile.state;
+    normalizeLoadedState();
+  }
+}
+
+function saveProfiles() {
+  const activeProfile = profiles.find(p => p.id === activeProfileId);
+  if (activeProfile) {
+    activeProfile.state = { ...state };
+  }
+  localStorage.setItem('totality_finance_profiles', JSON.stringify(profiles));
+  localStorage.setItem('totality_active_profile_id', activeProfileId);
+}
+
+function loadState() {
+  loadProfiles();
+  localStorage.setItem('totality_finance_state', JSON.stringify(state));
 }
 
 function saveState() {
+  saveProfiles();
   localStorage.setItem('totality_finance_state', JSON.stringify(state));
+}
+
+function switchProfile(profileId) {
+  // Save current profile state first
+  saveProfiles();
+  
+  const targetProfile = profiles.find(p => p.id === profileId);
+  if (targetProfile) {
+    activeProfileId = profileId;
+    state = targetProfile.state;
+    normalizeLoadedState();
+    saveProfiles();
+    
+    // Switch tab to dashboard and update UI
+    switchTab('dashboard');
+    showNotification("Profile Switched", `Switched to workspace "${targetProfile.name}".`, "saving", "check-circle");
+    
+    // Update profile dropdown
+    populateProfileDropdown();
+  }
+}
+
+function populateProfileDropdown() {
+  const select = document.getElementById('profile-select');
+  if (!select) return;
+  select.innerHTML = '';
+  profiles.forEach(p => {
+    select.innerHTML += `<option value="${p.id}" ${p.id === activeProfileId ? 'selected' : ''}>${p.name}</option>`;
+  });
+}
+
+// Get all YYYY-MM months from startMonth to endMonth (inclusive)
+function getMonthsRange(startMonthStr, endMonthStr) {
+  const months = [];
+  if (!startMonthStr || !endMonthStr) return months;
+  
+  let [startYear, startMonth] = startMonthStr.split('-').map(Number);
+  let [endYear, endMonth] = endMonthStr.split('-').map(Number);
+  
+  if (isNaN(startYear) || isNaN(startMonth) || isNaN(endYear) || isNaN(endMonth)) {
+    return months;
+  }
+  
+  let currYear = startYear;
+  let currMonth = startMonth;
+  
+  while (currYear < endYear || (currYear === endYear && currMonth <= endMonth)) {
+    const key = `${currYear}-${currMonth.toString().padStart(2, '0')}`;
+    months.push(key);
+    
+    currMonth++;
+    if (currMonth > 12) {
+      currMonth = 1;
+      currYear++;
+    }
+  }
+  return months;
 }
 
 function processRecurringExpenses() {
@@ -558,13 +735,23 @@ function processRecurringExpenses() {
   const currentMonth = (today.getMonth() + 1).toString().padStart(2, '0');
   const currentDay = today.getDate().toString().padStart(2, '0');
   const currentDateStr = `${currentYear}-${currentMonth}-${currentDay}`;
+
+  // End of selected month
+  const selectedParts = (state && state.selectedMonth) ? state.selectedMonth.split('-') : ["2026", "09"];
+  const selYear = Number(selectedParts[0]);
+  const selMonth = Number(selectedParts[1]);
+  const lastDay = new Date(selYear, selMonth, 0).getDate();
+  const selectedMonthEndStr = `${selYear}-${selMonth.toString().padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+
+  // limitDateStr is locked to today's real-world date to prevent writing future dummy transactions to the ledger
+  const limitDateStr = currentDateStr;
   
   // 1. Prune future-dated or pre-start-month auto-generated recurring transactions to fix balances
   if (state.transactions) {
     const originalLen = state.transactions.length;
     state.transactions = state.transactions.filter(tx => {
       if (tx.recurringId) {
-        if (tx.date > currentDateStr) {
+        if (tx.date > limitDateStr) {
           return false;
         }
         const sub = state.subscriptions.find(s => s.id === tx.recurringId);
@@ -582,30 +769,37 @@ function processRecurringExpenses() {
     }
   }
   
-  // 2. Generate recurring transactions up to today's date
-  MONTHS_REF.forEach(m => {
-    state.subscriptions.forEach(sub => {
-      const deterministicId = `tx_rec_${sub.id}_${m.key}`;
+  // 2. Generate recurring transactions up to limitDateStr
+  const limitMonthStr = limitDateStr.substring(0, 7); // "YYYY-MM"
+  
+  state.subscriptions.forEach(sub => {
+    // Determine starting month for this specific flow, defaulting to current selectedMonth if not set
+    const startMonthStr = sub.startMonth || (state.selectedMonth || getRealCurrentMonthStr());
+    
+    // Generate all YYYY-MM keys in range
+    const monthsToProcess = getMonthsRange(startMonthStr, limitMonthStr);
+    
+    monthsToProcess.forEach(mKey => {
+      const deterministicId = `tx_rec_${sub.id}_${mKey}`;
       if (state.deletedRecurring.includes(deterministicId)) {
         return;
       }
       
-      // Do NOT generate if the month is before the starting month of the recurring flow
-      if (sub.startMonth && m.key < sub.startMonth) {
-        return;
-      }
+      const [yStr, mStr] = mKey.split('-');
+      const year = Number(yStr);
+      const month = Number(mStr);
       
       let day = Number(sub.dayOfMonth) || 1;
-      // Simple clamp
-      if (day > 28) {
-        if (m.key === "2026-02") day = 28;
-        else if (["2026-04", "2026-06", "2026-09", "2026-11"].includes(m.key)) day = 30;
+      // Precise clamping: get the actual last day of this specific year/month combination
+      const lastDayOfMonth = new Date(year, month, 0).getDate();
+      if (day > lastDayOfMonth) {
+        day = lastDayOfMonth;
       }
       
-      const txDateStr = `${m.key}-${day.toString().padStart(2, '0')}`;
+      const txDateStr = `${mKey}-${day.toString().padStart(2, '0')}`;
       
       // Do NOT charge/generate if billing date is in the future
-      if (txDateStr > currentDateStr) {
+      if (txDateStr > limitDateStr) {
         return;
       }
       
@@ -652,7 +846,7 @@ function computeMetrics() {
   // 1. Calculate cumulative ledger balances (reflects all time data)
   const balances = {};
   state.bankAccounts.forEach(acc => {
-    balances[acc.id] = 0;
+    balances[acc.id] = Number(acc.initialBalance || 0);
   });
 
   const goalSavings = {};
@@ -787,8 +981,9 @@ function computeAnnualOverview() {
     categoryYTD[c.name] = 0;
   });
 
+  const selectedYear = state.selectedMonth ? state.selectedMonth.split('-')[0] : "2026";
   state.transactions.forEach(tx => {
-    if (tx.type === 'expense' && categoryYTD[tx.category] !== undefined) {
+    if (tx.type === 'expense' && tx.date.startsWith(selectedYear + '-') && categoryYTD[tx.category] !== undefined) {
       categoryYTD[tx.category] += Number(tx.amount);
     }
   });
@@ -808,19 +1003,28 @@ function updateUI() {
   const metrics = computeMetrics();
   const activeMonthLabel = MONTHS_REF.find(m => m.key === state.selectedMonth)?.name || "May";
   
-  // Set month dropdown selection
-  document.getElementById('global-month-select').value = state.selectedMonth;
+  // Set month and year dropdown selections
+  if (state.selectedMonth) {
+    const parts = state.selectedMonth.split('-');
+    const year = parts[0];
+    const month = parts[1];
+    const monthSelect = document.getElementById('global-month-select');
+    if (monthSelect) monthSelect.value = month;
+    const yearSelect = document.getElementById('global-year-select');
+    if (yearSelect) yearSelect.value = year;
+  }
 
   // Update Header Subtitles
+  const selectedYear = state.selectedMonth ? state.selectedMonth.split('-')[0] : "2026";
   const monthName = MONTHS_REF.find(m => m.key === state.selectedMonth)?.name || "Selected Month";
-  document.getElementById('budget-table-title').innerText = `Budget Allocation vs. Actual Spending (${monthName} 2026)`;
+  document.getElementById('budget-table-title').innerText = `Budget Allocation vs. Actual Spending (${monthName} ${selectedYear})`;
   document.getElementById('mini-tx-title').innerText = `Recent Transactions (${monthName})`;
 
-  // 1. Dashboard summary cards
-  document.getElementById('dash-income').innerText = formatCurrency(metrics.totalIncome);
-  document.getElementById('dash-spent').innerText = formatCurrency(metrics.totalSpent);
-  document.getElementById('dash-savings').innerText = formatCurrency(metrics.netSavings);
-  document.getElementById('dash-rate').innerText = metrics.savingsRate + '%';
+  // 1. Dashboard summary cards with rolling animation
+  animateNumber('dash-income', metrics.totalIncome);
+  animateNumber('dash-spent', metrics.totalSpent);
+  animateNumber('dash-savings', metrics.netSavings);
+  animateNumber('dash-rate', metrics.savingsRate, true);
   
   const savingsValEl = document.getElementById('dash-savings');
   if (metrics.netSavings < 0) {
@@ -1112,12 +1316,12 @@ function updateUI() {
     });
   }
 
-  // 5. Render Annual Overview Tab
+  // 5. Render Annual Overview Tab with rolling animations
   const annual = computeAnnualOverview();
-  document.getElementById('annual-ytd-income').innerText = formatCurrency(annual.ytdIncome);
-  document.getElementById('annual-ytd-spent').innerText = formatCurrency(annual.ytdSpent);
-  document.getElementById('annual-ytd-savings').innerText = formatCurrency(annual.ytdSavings);
-  document.getElementById('annual-ytd-rate').innerText = (annual.ytdSavings < 0 ? '-' : '') + annual.ytdRate + '%';
+  animateNumber('annual-ytd-income', annual.ytdIncome);
+  animateNumber('annual-ytd-spent', annual.ytdSpent);
+  animateNumber('annual-ytd-savings', annual.ytdSavings);
+  animateNumber('annual-ytd-rate', (annual.ytdSavings < 0 ? -1 : 1) * annual.ytdRate, true);
   
   const annualSavingsEl = document.getElementById('annual-ytd-savings');
   if (annual.ytdSavings < 0) {
@@ -1130,17 +1334,17 @@ function updateUI() {
   const annualTotalOwed = state.debts
     .filter(d => d.type !== 'credit')
     .reduce((sum, d) => sum + Number(d.remaining), 0);
-  document.getElementById('annual-total-debt').innerText = formatCurrency(annualTotalOwed);
+  animateNumber('annual-total-debt', annualTotalOwed);
 
   const annualTotalReceivable = state.debts
     .filter(d => d.type === 'credit')
     .reduce((sum, d) => sum + Number(d.remaining), 0);
-  document.getElementById('annual-total-receivable').innerText = formatCurrency(annualTotalReceivable);
+  animateNumber('annual-total-receivable', annualTotalReceivable);
 
   const annualFixedSpent = state.transactions
-    .filter(tx => tx.recurringId && tx.type === 'expense')
+    .filter(tx => tx.recurringId && tx.type === 'expense' && tx.date.startsWith(selectedYear + '-'))
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
-  document.getElementById('annual-total-fixed').innerText = formatCurrency(annualFixedSpent);
+  animateNumber('annual-total-fixed', annualFixedSpent);
 
   // Render Month-by-month table
   const annualMonthsTbody = document.getElementById('annual-months-tbody');
@@ -1551,6 +1755,9 @@ function updateUI() {
   if (typeof updateTopBalancesDisplay === 'function') {
     updateTopBalancesDisplay();
   }
+
+  // Keep subscription dropdowns in sync with selected month/year
+  populateSubscriptionFormDropdowns();
 }
 
 // Chart Renderings
@@ -1817,6 +2024,7 @@ function compute3MonthAverage(currentMonthKey) {
 function generateSmartNudges() {
   const nudges = [];
   const currentMonth = state.selectedMonth;
+  const selectedYear = currentMonth ? Number(currentMonth.split('-')[0]) : 2026;
   const currentSpending = getCategorySpendingForMonth(currentMonth);
   const averages = compute3MonthAverage(currentMonth);
   
@@ -1885,8 +2093,8 @@ function generateSmartNudges() {
     if (g.target <= 0) return;
     const pctSaved = (g.saved / g.target) * 100;
     const targetDate = new Date(g.targetDate);
-    const totalDays = (targetDate - new Date(2026, 0, 1)) / (1000 * 60 * 60 * 24);
-    const elapsedDays = (today - new Date(2026, 0, 1)) / (1000 * 60 * 60 * 24);
+    const totalDays = (targetDate - new Date(selectedYear, 0, 1)) / (1000 * 60 * 60 * 24);
+    const elapsedDays = (today - new Date(selectedYear, 0, 1)) / (1000 * 60 * 60 * 24);
     const expectedPct = totalDays > 0 ? Math.min(100, (elapsedDays / totalDays) * 100) : 100;
     
     if (pctSaved >= expectedPct + 10 && pctSaved > 5) {
@@ -1918,8 +2126,8 @@ function generateSmartNudges() {
     if (g.target <= 0) return false;
     const pctSaved = (g.saved / g.target) * 100;
     const targetDate = new Date(g.targetDate);
-    const totalDays = (targetDate - new Date(2026, 0, 1)) / (1000 * 60 * 60 * 24);
-    const elapsedDays = (today - new Date(2026, 0, 1)) / (1000 * 60 * 60 * 24);
+    const totalDays = (targetDate - new Date(selectedYear, 0, 1)) / (1000 * 60 * 60 * 24);
+    const elapsedDays = (today - new Date(selectedYear, 0, 1)) / (1000 * 60 * 60 * 24);
     const expectedPct = totalDays > 0 ? (elapsedDays / totalDays) * 100 : 100;
     return pctSaved < expectedPct - 5 && g.saved < g.target;
   });
@@ -4006,6 +4214,16 @@ function populateSubscriptionFormDropdowns() {
       accSelect.innerHTML += `<option value="${a.id}">${a.name}</option>`;
     });
   }
+
+  const startMonthSelect = document.getElementById('sub-start-month-select');
+  const startYearSelect = document.getElementById('sub-start-year-select');
+  if (startMonthSelect && startYearSelect && state.selectedMonth) {
+    const parts = state.selectedMonth.split('-');
+    const year = parts[0];
+    const month = parts[1];
+    startMonthSelect.value = month;
+    startYearSelect.value = year;
+  }
 }
 
 function handleTxCategoryVisibility(type, category) {
@@ -4331,6 +4549,7 @@ function initSetupPage() {
         <option value="Digital Savings" ${acc.type === 'Digital Savings' ? 'selected' : ''}>Digital Savings</option>
         <option value="Cash" ${acc.type === 'Cash' ? 'selected' : ''}>Cash</option>
       </select>
+      <input type="number" class="form-control setup-acc-init-balance" value="${acc.initialBalance || 0}" min="0" placeholder="Initial Balance (Rs.)">
       <input type="text" class="form-control setup-acc-purpose" value="${acc.purpose}" required placeholder="Account Strategy Purpose">
       <button type="button" class="setup-del-btn" onclick="removeSetupAccount(${index})">
         <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
@@ -4380,6 +4599,9 @@ function initSetupPage() {
     nameInput.addEventListener('input', handleSuggestions);
   });
 
+  // 5. Setup Profile Management
+  renderSetupProfilesList();
+
   lucide.createIcons();
 }
 
@@ -4406,6 +4628,82 @@ async function removeSetupGoal(index) {
   if (await showCustomConfirm("Remove Savings Goal", `Are you sure you want to remove goal "${goal.name || 'Unnamed Goal'}"?\n\nDeposits will remain in your accounts.`)) {
     state.savingsGoals.splice(index, 1);
     initSetupPage();
+  }
+}
+
+function renderSetupProfilesList() {
+  const container = document.getElementById('setup-profiles-list');
+  if (!container) return;
+  container.innerHTML = '';
+
+  profiles.forEach(p => {
+    const isCurrent = p.id === activeProfileId;
+    const row = document.createElement('div');
+    row.className = 'setup-input-row';
+    row.style.gridTemplateColumns = '1.5fr auto';
+    row.style.gap = '16px';
+    row.style.alignItems = 'center';
+    row.style.padding = '8px 12px';
+    row.style.backgroundColor = 'var(--card-bg)';
+    row.style.border = '1px solid var(--border-color)';
+    row.style.borderRadius = 'var(--btn-radius)';
+
+    row.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-weight: 500; font-size: 14px; color: var(--text-color);">${p.name}</span>
+        ${isCurrent ? `<span style="font-size: 10px; padding: 2px 8px; border-radius: 12px; background-color: var(--success-glow); color: var(--success); border: 1px solid rgba(74, 222, 128, 0.2); font-weight: 600;">Active</span>` : ''}
+      </div>
+      <div>
+        ${isCurrent ? `
+          <span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Active Workspace</span>
+        ` : `
+          <button type="button" class="setup-del-btn" title="Delete Profile" onclick="deleteProfile('${p.id}')">
+            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+          </button>
+        `}
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  if (typeof lucide !== 'undefined') {
+    lucide.createIcons({ nodes: [container] });
+  }
+}
+
+async function deleteProfile(profileId) {
+  if (profileId === activeProfileId) {
+    showNotification("Error", "You cannot delete the active profile.", "saving", "alert-circle");
+    return;
+  }
+  
+  const targetProfile = profiles.find(p => p.id === profileId);
+  if (!targetProfile) return;
+  
+  const confirmed = await showCustomConfirm(
+    "Delete Profile Workspace",
+    `Are you sure you want to delete the profile "${targetProfile.name}"?\n\nThis will permanently delete all transactions, bank accounts, and goals under this profile. This action cannot be undone.`
+  );
+  
+  if (confirmed) {
+    profiles = profiles.filter(p => p.id !== profileId);
+    
+    // Safety fallback just in case
+    if (profiles.length === 0) {
+      const defaultState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      profiles.push({
+        id: 'profile_default',
+        name: 'Azhan',
+        state: defaultState
+      });
+      activeProfileId = 'profile_default';
+      state = defaultState;
+    }
+    
+    saveProfiles();
+    populateProfileDropdown();
+    initSetupPage();
+    showNotification("Profile Deleted", `Workspace "${targetProfile.name}" has been deleted.`, "saving", "check-circle");
   }
 }
 
@@ -4473,6 +4771,7 @@ document.getElementById('bank-accounts-form').addEventListener('submit', async (
     const name = r.querySelector('.setup-acc-name').value.trim();
     const bank = r.querySelector('.setup-acc-bank').value.trim();
     const type = r.querySelector('.setup-acc-type').value;
+    const initialBalance = Number(r.querySelector('.setup-acc-init-balance').value) || 0;
     const purpose = r.querySelector('.setup-acc-purpose').value.trim();
     
     if (name) {
@@ -4481,6 +4780,7 @@ document.getElementById('bank-accounts-form').addEventListener('submit', async (
         name,
         bank,
         type,
+        initialBalance,
         purpose,
         balance: originalAcc ? originalAcc.balance : 0
       });
@@ -4591,12 +4891,29 @@ if (importBtn && importFileInput) {
   });
 }
 
-// Global Month dropdown change
-document.getElementById('global-month-select').addEventListener('change', (e) => {
-  state.selectedMonth = e.target.value;
-  saveState();
-  updateUI();
-});
+// Global Month/Year dropdown change handler
+function handleGlobalDateChange() {
+  const monthSelect = document.getElementById('global-month-select');
+  const yearSelect = document.getElementById('global-year-select');
+  if (monthSelect && yearSelect) {
+    const month = monthSelect.value;
+    const year = yearSelect.value;
+    state.selectedMonth = `${year}-${month}`;
+    updateMonthsRef();
+    saveState();
+    updateUI();
+  }
+}
+
+const globalMonthSelect = document.getElementById('global-month-select');
+if (globalMonthSelect) {
+  globalMonthSelect.addEventListener('change', handleGlobalDateChange);
+}
+
+const globalYearSelect = document.getElementById('global-year-select');
+if (globalYearSelect) {
+  globalYearSelect.addEventListener('change', handleGlobalDateChange);
+}
 
 // Theme switcher
 const themeToggleBtn = document.getElementById('theme-toggle');
@@ -4638,7 +4955,9 @@ if (addSubForm) {
     const dayOfMonth = Number(document.getElementById('sub-day').value);
     const category = document.getElementById('sub-category').value;
     const account = document.getElementById('sub-account').value;
-    const startMonth = document.getElementById('sub-start-month').value;
+    const startM = document.getElementById('sub-start-month-select').value;
+    const startY = document.getElementById('sub-start-year-select').value;
+    const startMonth = `${startY}-${startM}`;
     
     if (name && amount > 0 && dayOfMonth >= 1 && dayOfMonth <= 31) {
       const newSub = {
@@ -4833,8 +5152,8 @@ function updateTopBalancesDisplay() {
   
   if (netCashEl && dailySpendEl) {
     if (balancesVisible) {
-      netCashEl.innerText = formatCurrency(netCashVal);
-      dailySpendEl.innerText = formatCurrency(dailySpendVal);
+      animateNumber('top-net-cash', netCashVal);
+      animateNumber('top-daily-spend', dailySpendVal);
       if (eyeIcon) {
         eyeIcon.setAttribute('data-lucide', 'eye-off');
       }
@@ -4976,9 +5295,212 @@ if (modalGoalName && modalGoalTarget && modalGoalSugg) {
   });
 }
 
+// Profile Manager Wizard Modal Handlers
+const profileModal = document.getElementById('profile-modal');
+const profileForm = document.getElementById('profile-modal-form');
+
+function openProfileModal() {
+  if (profileForm) profileForm.reset();
+  
+  // Clear lists
+  document.getElementById('modal-profile-accounts-list').innerHTML = '';
+  document.getElementById('modal-profile-income-list').innerHTML = '';
+  
+  // Populate defaults for ease of use
+  addProfileAccountRow("Standard Chartered", "Standard Chartered", "Current", 0);
+  addProfileAccountRow("Allied Bank", "Allied Bank", "Savings", 0);
+  
+  addProfileIncomeRow("Coca Cola");
+  addProfileIncomeRow("Extra / EP");
+  addProfileIncomeRow("Miscellaneous");
+  addProfileIncomeRow("Tuition");
+  
+  if (profileModal) profileModal.classList.add('active');
+}
+
+function closeProfileModal() {
+  if (profileModal) profileModal.classList.remove('active');
+}
+
+function addProfileAccountRow(name="", bank="", type="Current", initBalance=0) {
+  const list = document.getElementById('modal-profile-accounts-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'modal-profile-acc-row';
+  row.style.display = 'grid';
+  row.style.gridTemplateColumns = '1.2fr 1fr 1fr 1fr auto';
+  row.style.gap = '8px';
+  row.style.alignItems = 'center';
+  
+  row.innerHTML = `
+    <input type="text" class="form-control profile-acc-name" value="${name}" placeholder="Name (e.g. SCB)" required>
+    <input type="text" class="form-control profile-acc-bank" value="${bank}" placeholder="Bank" required>
+    <select class="form-control profile-acc-type">
+      <option value="Current" ${type === 'Current' ? 'selected' : ''}>Current</option>
+      <option value="Savings" ${type === 'Savings' ? 'selected' : ''}>Savings</option>
+      <option value="Digital Savings" ${type === 'Digital Savings' ? 'selected' : ''}>Digital Savings</option>
+      <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
+    </select>
+    <input type="number" class="form-control profile-acc-init" value="${initBalance}" placeholder="Inherited" min="0" required>
+    <button type="button" class="btn btn-secondary modal-row-del-btn" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--danger);">
+      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+    </button>
+  `;
+  
+  row.querySelector('.modal-row-del-btn').addEventListener('click', () => {
+    row.remove();
+  });
+  
+  list.appendChild(row);
+  if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [row] });
+}
+
+function addProfileIncomeRow(name="") {
+  const list = document.getElementById('modal-profile-income-list');
+  if (!list) return;
+  const row = document.createElement('div');
+  row.className = 'modal-profile-inc-row';
+  row.style.display = 'grid';
+  row.style.gridTemplateColumns = '1fr auto';
+  row.style.gap = '8px';
+  row.style.alignItems = 'center';
+  
+  row.innerHTML = `
+    <input type="text" class="form-control profile-inc-name" value="${name}" placeholder="e.g. Salary, Freelance" required>
+    <button type="button" class="btn btn-secondary modal-row-del-btn" style="padding: 6px; display: inline-flex; align-items: center; justify-content: center; color: var(--danger);">
+      <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+    </button>
+  `;
+  
+  row.querySelector('.modal-row-del-btn').addEventListener('click', () => {
+    row.remove();
+  });
+  
+  list.appendChild(row);
+  if (typeof lucide !== 'undefined') lucide.createIcons({ nodes: [row] });
+}
+
+// Attach inner buttons within profile modal
+const modalAddAccBtn = document.getElementById('modal-add-acc-btn');
+if (modalAddAccBtn) {
+  modalAddAccBtn.addEventListener('click', () => addProfileAccountRow());
+}
+const modalAddIncBtn = document.getElementById('modal-add-inc-btn');
+if (modalAddIncBtn) {
+  modalAddIncBtn.addEventListener('click', () => addProfileIncomeRow());
+}
+const closeProfileModalBtn = document.getElementById('close-profile-modal');
+if (closeProfileModalBtn) {
+  closeProfileModalBtn.addEventListener('click', closeProfileModal);
+}
+const cancelProfileModalBtn = document.getElementById('cancel-profile-modal');
+if (cancelProfileModalBtn) {
+  cancelProfileModalBtn.addEventListener('click', closeProfileModal);
+}
+
+if (profileForm) {
+  profileForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('profile-name').value.trim();
+    if (!name) return;
+    
+    // Check if name already exists
+    if (profiles.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      alert("A profile with this name already exists!");
+      return;
+    }
+    
+    // Gather accounts
+    const accRows = document.querySelectorAll('#modal-profile-accounts-list .modal-profile-acc-row');
+    const bankAccounts = [];
+    accRows.forEach((r, idx) => {
+      const accName = r.querySelector('.profile-acc-name').value.trim();
+      const bank = r.querySelector('.profile-acc-bank').value.trim();
+      const type = r.querySelector('.profile-acc-type').value;
+      const initialBalance = Number(r.querySelector('.profile-acc-init').value) || 0;
+      
+      if (accName) {
+        bankAccounts.push({
+          id: 'acc_' + Date.now() + '_' + idx,
+          name: accName,
+          bank,
+          type,
+          initialBalance,
+          purpose: type === 'Savings' ? 'Savings' : 'Daily Spend',
+          balance: initialBalance
+        });
+      }
+    });
+    
+    // Gather income sources
+    const incRows = document.querySelectorAll('#modal-profile-income-list .modal-profile-inc-row');
+    const incomeSources = [];
+    incRows.forEach(r => {
+      const incName = r.querySelector('.profile-inc-name').value.trim();
+      if (incName) {
+        incomeSources.push(incName);
+      }
+    });
+    
+    // Standard default categories and budgets (same for any user!)
+    const categories = JSON.parse(JSON.stringify(DEFAULT_STATE.categories));
+    
+    // Construct new state
+    const newProfileState = {
+      ...DEFAULT_STATE,
+      categories,
+      bankAccounts,
+      incomeSources,
+      selectedMonth: state.selectedMonth || DEFAULT_STATE.selectedMonth,
+      transactions: [],
+      savingsGoals: [],
+      subscriptions: [],
+      debts: [],
+      monthlyBudgets: {},
+      _schemaVersion: 2
+    };
+    
+    const newProfileId = 'profile_' + Date.now();
+    const newProfile = {
+      id: newProfileId,
+      name,
+      state: newProfileState
+    };
+    
+    profiles.push(newProfile);
+    activeProfileId = newProfileId;
+    state = newProfileState;
+    
+    saveProfiles();
+    normalizeLoadedState();
+    saveState();
+    
+    closeProfileModal();
+    switchTab('dashboard');
+    updateUI();
+    populateProfileDropdown();
+    
+    showNotification("Profile Created", `Workspace "${name}" has been created and activated!`, "saving", "check-circle");
+  });
+}
+
 // App Start
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  
+  // Profile dropdown bindings
+  populateProfileDropdown();
+  const profileSelect = document.getElementById('profile-select');
+  if (profileSelect) {
+    profileSelect.addEventListener('change', (e) => {
+      switchProfile(e.target.value);
+    });
+  }
+  const addProfileBtn = document.getElementById('add-profile-btn');
+  if (addProfileBtn) {
+    addProfileBtn.addEventListener('click', openProfileModal);
+  }
+
   updateTodayDateDisplay();
   initConfirmModalEvents();
   updateUI();

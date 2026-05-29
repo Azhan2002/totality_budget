@@ -40,6 +40,19 @@
           <span class="brand-name">Totality Budget</span>
         </div>
         
+        <!-- Profile / ID Selector Section -->
+        <div class="profile-selector-container" style="padding: 0 16px 16px 16px; border-bottom: 1px solid var(--border-color); margin-bottom: 8px;">
+          <label style="font-size: 9px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.8px; display: block; margin-bottom: 6px;">Profile ID</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="profile-select" style="flex: 1; padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s;">
+              <!-- Dynamically populated -->
+            </select>
+            <button id="add-profile-btn" style="padding: 8px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" title="Create New Profile ID">
+              <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </div>
+        
         <nav class="nav-links">
           <li class="nav-item">
             <a class="nav-link active" data-tab="dashboard">
@@ -95,12 +108,6 @@
               <span>Financial Tools</span>
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" data-tab="setup">
-              <i data-lucide="settings"></i>
-              <span>Setup & Config</span>
-            </a>
-          </li>
         </nav>
       </div>
       
@@ -110,10 +117,15 @@
           <i data-lucide="book-open"></i>
           <span>User Manual Guide</span>
         </a>
-        <button id="theme-toggle" class="theme-toggle-btn">
-          <i data-lucide="sun" class="sun-icon"></i>
-          <span class="theme-text">Light Mode</span>
-        </button>
+        <div style="display: flex; gap: 8px; width: 100%; box-sizing: border-box; align-items: stretch;">
+          <button id="theme-toggle" class="theme-toggle-btn" style="flex: 1; min-width: 0; box-sizing: border-box;">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <span class="theme-text">Light Mode</span>
+          </button>
+          <button class="nav-link settings-toggle-btn" data-tab="setup" title="Setup & Config">
+            <i data-lucide="settings" class="settings-icon"></i>
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -145,20 +157,30 @@
         </div>
         
         <div class="action-bar">
-          <select id="global-month-select" class="month-selector">
-            <option value="2026-01">January 2026</option>
-            <option value="2026-02">February 2026</option>
-            <option value="2026-03">March 2026</option>
-            <option value="2026-04">April 2026</option>
-            <option value="2026-05" selected>May 2026</option>
-            <option value="2026-06">June 2026</option>
-            <option value="2026-07">July 2026</option>
-            <option value="2026-08">August 2026</option>
-            <option value="2026-09">September 2026</option>
-            <option value="2026-10">October 2026</option>
-            <option value="2026-11">November 2026</option>
-            <option value="2026-12">December 2026</option>
-          </select>
+          <div class="date-selector-group" style="display: flex; gap: 8px; align-items: center;">
+            <select id="global-month-select" class="month-selector" style="min-width: 95px;">
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09" selected>September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+            <select id="global-year-select" class="month-selector" style="min-width: 70px;">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+            </select>
+          </div>
           <button id="add-tx-btn" class="btn btn-primary">
             <i data-lucide="plus-circle"></i>
             <span>Add Transaction</span>
@@ -697,21 +719,31 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="sub-start-month" style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Start Month</label>
-                <select id="sub-start-month" class="form-control" required>
-                  <option value="2026-01" selected>January 2026</option>
-                  <option value="2026-02">February 2026</option>
-                  <option value="2026-03">March 2026</option>
-                  <option value="2026-04">April 2026</option>
-                  <option value="2026-05">May 2026</option>
-                  <option value="2026-06">June 2026</option>
-                  <option value="2026-07">July 2026</option>
-                  <option value="2026-08">August 2026</option>
-                  <option value="2026-09">September 2026</option>
-                  <option value="2026-10">October 2026</option>
-                  <option value="2026-11">November 2026</option>
-                  <option value="2026-12">December 2026</option>
-                </select>
+                <label style="display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Start Date (Month & Year)</label>
+                <div style="display: flex; gap: 8px;">
+                  <select id="sub-start-month-select" class="form-control" style="flex: 1;" required>
+                    <option value="01">January</option>
+                    <option value="02">February</option>
+                    <option value="03">March</option>
+                    <option value="04">April</option>
+                    <option value="05">May</option>
+                    <option value="06">June</option>
+                    <option value="07">July</option>
+                    <option value="08">August</option>
+                    <option value="09" selected>September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                  <select id="sub-start-year-select" class="form-control" style="width: 100px;" required>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026" selected>2026</option>
+                    <option value="2027">2027</option>
+                    <option value="2028">2028</option>
+                    <option value="2029">2029</option>
+                  </select>
+                </div>
               </div>
               <button type="submit" class="btn btn-primary" style="margin-top: 8px; justify-content: center;">Save Recurring Flow</button>
             </form>
@@ -1223,6 +1255,17 @@
             </div>
           </div>
 
+          <!-- Manage Profile IDs -->
+          <div class="card" style="margin-top: 8px;">
+            <h3 class="card-title">👥 Manage Profile IDs</h3>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 20px; line-height: 1.4;">
+              Delete unused Profile IDs to clean up your workspace database. The active profile cannot be deleted.
+            </p>
+            <div id="setup-profiles-list" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Filled by JS -->
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -1345,6 +1388,70 @@
         <div class="modal-footer">
           <button type="button" id="cancel-goal-modal" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Goal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CREATE PROFILE MODAL -->
+  <div id="profile-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Profile ID</h3>
+        <button id="close-profile-modal" class="modal-close-btn" type="button">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <form id="profile-modal-form">
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 20px;">
+          
+          <!-- Profile General Info -->
+          <div class="form-group">
+            <label for="profile-name">Workspace / Profile ID Name</label>
+            <input type="text" id="profile-name" class="form-control" placeholder="e.g. Business Workspace, Personal Tracker, Azhan" required>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">This ID isolates your finance data, budgets, and transactions.</span>
+          </div>
+          
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+          
+          <!-- Bank Accounts -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <label style="margin-bottom: 0; font-weight: 700;">🏦 Initial Bank Accounts & Inherited Balances</label>
+              <button type="button" id="modal-add-acc-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add Account
+              </button>
+            </div>
+            <div id="modal-profile-accounts-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamic Rows populated in JS -->
+            </div>
+          </div>
+          
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+
+          <!-- Income Sources -->
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <label style="margin-bottom: 0; font-weight: 700;">💰 Income Sources</label>
+              <button type="button" id="modal-add-inc-btn" class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Add Source
+              </button>
+            </div>
+            <div id="modal-profile-income-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Dynamic Rows populated in JS -->
+            </div>
+          </div>
+
+          <div style="background: rgba(228, 0, 43, 0.05); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 20px;">
+            <p style="margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-color);">
+              💡 <strong>Note on Budgets:</strong> Expense categories and default budgets will be initialized to standard defaults (same for any user). You can customize them anytime later from the <strong>Setup & Config</strong> tab.
+            </p>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="cancel-profile-modal" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Profile</button>
         </div>
       </form>
     </div>

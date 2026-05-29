@@ -5758,7 +5758,11 @@ function renderBillSplitter() {
         verifBadge.style.color = 'var(--text-muted)';
       }
       if (verifDetails) {
-        verifDetails.innerHTML = 'Add group members and food items to verify splits.';
+        verifDetails.innerHTML = `
+          Add group members and food items to verify splits.<br>
+          Sum of Addition of Individual Bill will be Talied against Total Bill.<br>
+          Formula Calc: (Total Bill - Discounts) + Tax on original Total Bill
+        `;
       }
     }
   }
@@ -5775,8 +5779,9 @@ function renderBillSplitter() {
   }
   
   const discountCapInput = document.getElementById('billsplit-discount-cap');
-  if (discountCapInput && Number(discountCapInput.value) !== state.billSplitter.discountCap) {
-    discountCapInput.value = state.billSplitter.discountCap || 0;
+  if (discountCapInput) {
+    const capVal = state.billSplitter.discountCap;
+    discountCapInput.value = (capVal && !isNaN(capVal) && Number(capVal) !== 0) ? capVal : "";
   }
   
   const cardRadio = document.querySelector('input[name="billsplit-payment"][value="card"]');

@@ -56,7 +56,14 @@ const DEFAULT_STATE = {
   ],
   deletedRecurring: [],
   transactions: [],
-  wishlist: []
+  wishlist: [],
+  billSplitter: {
+    restaurant: "Seven Sides",
+    paymentMethod: "card",
+    discountPct: 0,
+    discountCap: 0,
+    people: []
+  }
 };
 
 // Months reference (updated dynamically based on selected year)
@@ -581,6 +588,15 @@ function normalizeLoadedState() {
   if (!state.deletedRecurring) state.deletedRecurring = DEFAULT_STATE.deletedRecurring || [];
   if (!state.transactions) state.transactions = DEFAULT_STATE.transactions;
   if (!state.wishlist) state.wishlist = [];
+  if (!state.billSplitter) {
+    state.billSplitter = {
+      restaurant: "Seven Sides",
+      paymentMethod: "card",
+      discountPct: 0,
+      discountCap: 0,
+      people: []
+    };
+  }
 
   // Schema Migration
   const hasOldAccounts = state.bankAccounts.some(acc => acc.id === 'daily_ops');
@@ -2734,6 +2750,8 @@ function switchSubtab(subtabId) {
     renderWishlist();
   } else if (subtabId === 'tools-joy') {
     renderJoyMapping();
+  } else if (subtabId === 'tools-billsplit') {
+    renderBillSplitter();
   }
 }
 
@@ -4443,10 +4461,29 @@ function autoCategorizeTxDescription() {
 
     if (suggestedCategory === 'Grocery' || suggestedCategory === 'Daily' || suggestedCategory === 'Daily Lunch' || suggestedCategory === 'Order Out') {
       const accSelect = document.getElementById('tx-account');
-      if (accSelect && Array.from(accSelect.options).some(opt => opt.value === 'scb')) {
-        if (accSelect.value !== 'scb') {
-          accSelect.value = 'scb';
-          accSelect.dispatchEvent(new Event('change'));
+      if (accSelect) {
+        let dailySpendAcc = state.bankAccounts.find(a => a.id === 'scb');
+        if (!dailySpendAcc) {
+          dailySpendAcc = state.bankAccounts.find(a => {
+            const p = (a.purpose || '').toLowerCase();
+            return p.includes('daily') || p.includes('salary');
+          });
+        }
+        if (!dailySpendAcc) {
+          dailySpendAcc = state.bankAccounts.find(a => {
+            const t = (a.type || '').toLowerCase();
+            const p = (a.purpose || '').toLowerCase();
+            return !t.includes('saving') && !p.includes('saving');
+          });
+        }
+        if (!dailySpendAcc && state.bankAccounts.length > 0) {
+          dailySpendAcc = state.bankAccounts[0];
+        }
+        if (dailySpendAcc && Array.from(accSelect.options).some(opt => opt.value === dailySpendAcc.id)) {
+          if (accSelect.value !== dailySpendAcc.id) {
+            accSelect.value = dailySpendAcc.id;
+            accSelect.dispatchEvent(new Event('change'));
+          }
         }
       }
     }
@@ -5140,7 +5177,23 @@ function toggleTopBalancesVisibility() {
 function updateTopBalancesDisplay() {
   if (!state || !state.bankAccounts) return;
   const netCashVal = state.bankAccounts.reduce((sum, a) => sum + a.balance, 0);
-  const dailySpendAcc = state.bankAccounts.find(a => a.id === 'scb');
+  let dailySpendAcc = state.bankAccounts.find(a => a.id === 'scb');
+  if (!dailySpendAcc) {
+    dailySpendAcc = state.bankAccounts.find(a => {
+      const p = (a.purpose || '').toLowerCase();
+      return p.includes('daily') || p.includes('salary');
+    });
+  }
+  if (!dailySpendAcc) {
+    dailySpendAcc = state.bankAccounts.find(a => {
+      const t = (a.type || '').toLowerCase();
+      const p = (a.purpose || '').toLowerCase();
+      return !t.includes('saving') && !p.includes('saving');
+    });
+  }
+  if (!dailySpendAcc && state.bankAccounts.length > 0) {
+    dailySpendAcc = state.bankAccounts[0];
+  }
   const dailySpendVal = dailySpendAcc ? dailySpendAcc.balance : 0;
   
   const netCashEl = document.getElementById('top-net-cash');
@@ -5482,6 +5535,756 @@ if (profileForm) {
   });
 }
 
+// ─── FEATURE 5: BILL SPLIT CALCULATOR ───
+
+function updateBillSplitterTableTitle() {
+  const tableTitle = document.getElementById('billsplit-table-title');
+  if (tableTitle) {
+    const name = (state.billSplitter && state.billSplitter.restaurant) ? state.billSplitter.restaurant.trim() : "Seven Sides";
+    tableTitle.innerText = `📋 Split Breakdown (${name || 'Seven Sides'})`;
+  }
+}
+
+function renderBillSplitter() {
+  if (!state.billSplitter) {
+    state.billSplitter = {
+      restaurant: "Seven Sides",
+      paymentMethod: "card",
+      discountPct: 0,
+      discountCap: 0,
+      members: ["Azhan", "Alina", "Ahmed"],
+      items: []
+    };
+  }
+  
+  const members = state.billSplitter.members || [];
+  const items = state.billSplitter.items || [];
+  const discountPct = (Number(state.billSplitter.discountPct) || 0) / 100;
+  const discountCap = Number(state.billSplitter.discountCap) || 0;
+  const paymentMethod = state.billSplitter.paymentMethod || "card";
+  const taxRate = (paymentMethod === 'cash') ? 0.16 : 0.05;
+  
+  // Render Group Members Badges List
+  const membersListEl = document.getElementById('billsplit-members-list');
+  if (membersListEl) {
+    if (members.length === 0) {
+      membersListEl.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">No members added. Enter names above to create a group.</span>`;
+    } else {
+      membersListEl.innerHTML = members.map(m => `
+        <div class="member-pill" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(228, 0, 43, 0.08); color: var(--primary); border: 1px solid rgba(228, 0, 43, 0.15); padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; box-sizing: border-box;">
+          <span>${m}</span>
+          <span class="billsplit-member-remove" data-name="${m}" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-muted); font-size: 14px; line-height: 1; height: 14px; width: 14px; transition: color 0.2s;" title="Remove Member">×</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Render Checkboxes in Add Item Card
+  renderAddItemFormMembers();
+
+  // Render Items List Table
+  const itemsTbody = document.getElementById('billsplit-items-tbody');
+  if (itemsTbody) {
+    itemsTbody.innerHTML = '';
+    if (items.length === 0) {
+      itemsTbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            No items logged yet. Add food items using the form on the left.
+          </td>
+        </tr>
+      `;
+    } else {
+      items.forEach(item => {
+        const sharedNames = (item.shares || []).join(', ');
+        itemsTbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</td>
+            <td>Rs. ${Number(item.price).toLocaleString()}</td>
+            <td style="color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${sharedNames}">${sharedNames}</td>
+            <td style="text-align: center; padding: 4px 8px;">
+              <button class="btn btn-secondary billsplit-item-delete-btn" data-id="${item.id}" style="padding: 4px 8px; border-radius: 6px; color: var(--danger); border-color: rgba(239, 68, 68, 0.2); cursor: pointer;" title="Delete Item">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+  }
+
+  // Compute Food Share for each member
+  const memberOriginalCost = {};
+  members.forEach(m => memberOriginalCost[m] = 0);
+  
+  let totalFoodCost = 0;
+  items.forEach(item => {
+    const price = Number(item.price) || 0;
+    const shareCount = (item.shares || []).length;
+    if (shareCount > 0) {
+      totalFoodCost += price;
+      const sharePrice = price / shareCount;
+      item.shares.forEach(m => {
+        if (memberOriginalCost[m] !== undefined) {
+          memberOriginalCost[m] += sharePrice;
+        }
+      });
+    }
+  });
+
+  // Calculate total discount applied (capped if cap > 0)
+  const uncappedDiscount = totalFoodCost * discountPct;
+  const actualTotalDiscount = (discountCap > 0) ? Math.min(uncappedDiscount, discountCap) : uncappedDiscount;
+
+  // Render Split Breakdown Table
+  const tbody = document.getElementById('billsplit-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    
+    if (members.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            No group members added yet. Add members to split bills.
+          </td>
+        </tr>
+      `;
+    } else if (items.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
+            Add food items on the left to see each person's split breakdown.
+          </td>
+        </tr>
+      `;
+    } else {
+      members.forEach(m => {
+        const originalAmt = memberOriginalCost[m] || 0;
+        // Proportionate share of total food cost
+        const share = totalFoodCost > 0 ? originalAmt / totalFoodCost : 0;
+        // Proportional discount
+        const personDiscount = share * actualTotalDiscount;
+        // Tax is original share * taxRate
+        const personTax = originalAmt * taxRate;
+        // Total for this person
+        const personTotal = originalAmt - personDiscount + personTax;
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${m}</td>
+            <td>Rs. ${Math.round(originalAmt).toLocaleString()}</td>
+            <td style="color: var(--success); font-weight: 500;">-Rs. ${Math.round(personDiscount).toLocaleString()}</td>
+            <td style="color: var(--danger); font-weight: 500;">Rs. ${Math.round(personTax).toLocaleString()}</td>
+            <td style="font-weight: 700; color: var(--text-main);">Rs. ${Math.round(personTotal).toLocaleString()}</td>
+          </tr>
+        `;
+      });
+    }
+  }
+
+  // Calculate sum of individual final splits and verify against formula
+  let grandTotalSum = 0;
+  members.forEach(m => {
+    const originalAmt = memberOriginalCost[m] || 0;
+    const share = totalFoodCost > 0 ? originalAmt / totalFoodCost : 0;
+    const personDiscount = share * actualTotalDiscount;
+    const personTax = originalAmt * taxRate;
+    grandTotalSum += (originalAmt - personDiscount + personTax);
+  });
+  
+  const totalTax = totalFoodCost * taxRate;
+  const formulaTotal = (totalFoodCost - actualTotalDiscount) + totalTax;
+  
+  // Render Summary metrics
+  const originalSumEl = document.getElementById('billsplit-sum-original');
+  if (originalSumEl) originalSumEl.innerText = formatCurrency(totalFoodCost);
+  
+  const discountSumEl = document.getElementById('billsplit-sum-discount');
+  if (discountSumEl) discountSumEl.innerText = `-Rs. ${Math.round(actualTotalDiscount).toLocaleString()}`;
+  
+  const taxSumEl = document.getElementById('billsplit-sum-tax');
+  if (taxSumEl) taxSumEl.innerText = `Rs. ${Math.round(totalTax).toLocaleString()}`;
+  
+  const finalSumEl = document.getElementById('billsplit-sum-final');
+  if (finalSumEl) finalSumEl.innerText = formatCurrency(Math.round(grandTotalSum));
+
+  // Render Verification box
+  const verifBox = document.getElementById('billsplit-verification-box');
+  if (verifBox) {
+    if (items.length > 0 && members.length > 0) {
+      verifBox.style.display = 'block';
+      const verifDetails = document.getElementById('billsplit-verif-details');
+      const verifBadge = document.getElementById('billsplit-verif-badge');
+      
+      const diff = Math.abs(grandTotalSum - formulaTotal);
+      if (diff < 0.2) { // 0.2 threshold to handle minor roundings
+        verifBox.style.background = 'rgba(16, 185, 129, 0.08)';
+        verifBox.style.borderLeftColor = 'var(--success)';
+        if (verifBadge) {
+          verifBadge.innerText = 'Calculations Verified ✓';
+          verifBadge.style.color = 'var(--success)';
+        }
+        if (verifDetails) {
+          verifDetails.innerHTML = `
+            Sum of individual splits matches the formula check perfectly:<br>
+            <strong>Sum of individual bills:</strong> Rs. ${Math.round(grandTotalSum).toLocaleString()}<br>
+            <strong>Formula calculation:</strong> (Rs. ${totalFoodCost.toLocaleString()} food - Rs. ${Math.round(actualTotalDiscount).toLocaleString()} discount) + Rs. ${Math.round(totalTax).toLocaleString()} tax = <strong>Rs. ${Math.round(formulaTotal).toLocaleString()}</strong>
+          `;
+        }
+      } else {
+        verifBox.style.background = 'rgba(245, 158, 11, 0.08)';
+        verifBox.style.borderLeftColor = 'var(--warning)';
+        if (verifBadge) {
+          verifBadge.innerText = 'Verification Discrepancy ⚠';
+          verifBadge.style.color = 'var(--warning)';
+        }
+        if (verifDetails) {
+          verifDetails.innerHTML = `
+            Warning: Sum of splits (Rs. ${Math.round(grandTotalSum).toLocaleString()}) does not match formula (Rs. ${Math.round(formulaTotal).toLocaleString()}). Diff: Rs. ${diff.toFixed(2)}.
+          `;
+        }
+      }
+    } else {
+      verifBox.style.display = 'none';
+    }
+  }
+
+  // Pre-fill parameters on render if needed
+  const restInput = document.getElementById('billsplit-restaurant');
+  if (restInput && restInput.value !== state.billSplitter.restaurant) {
+    restInput.value = state.billSplitter.restaurant || "Seven Sides";
+  }
+  
+  const discountPctInput = document.getElementById('billsplit-discount-pct');
+  if (discountPctInput && Number(discountPctInput.value) !== state.billSplitter.discountPct) {
+    discountPctInput.value = state.billSplitter.discountPct || 0;
+  }
+  
+  const discountCapInput = document.getElementById('billsplit-discount-cap');
+  if (discountCapInput && Number(discountCapInput.value) !== state.billSplitter.discountCap) {
+    discountCapInput.value = state.billSplitter.discountCap || 0;
+  }
+  
+  const cardRadio = document.querySelector('input[name="billsplit-payment"][value="card"]');
+  const cashRadio = document.querySelector('input[name="billsplit-payment"][value="cash"]');
+  if (cardRadio && cashRadio) {
+    if (paymentMethod === 'cash') {
+      cashRadio.checked = true;
+    } else {
+      cardRadio.checked = true;
+    }
+  }
+
+  updateBillSplitterTableTitle();
+  
+  // Populate user member dropdown
+  const userSelect = document.getElementById('billsplit-user-member');
+  if (userSelect) {
+    const prevVal = userSelect.value;
+    userSelect.innerHTML = members.map(m => `<option value="${m}">${m}</option>`).join('');
+    // Try to auto-select active profile name if present
+    const activeProfile = profiles.find(p => p.id === activeProfileId);
+    const defaultUserName = activeProfile ? activeProfile.name : "Azhan";
+    if (prevVal && members.includes(prevVal)) {
+      userSelect.value = prevVal;
+    } else {
+      const match = members.find(m => m.toLowerCase() === defaultUserName.toLowerCase());
+      if (match) {
+        userSelect.value = match;
+      } else if (members.length > 0) {
+        userSelect.value = members[0];
+      }
+    }
+  }
+
+  // Populate payer dropdown (other members)
+  const payerSelect = document.getElementById('billsplit-payer-select');
+  if (payerSelect) {
+    const selectedUser = userSelect ? userSelect.value : "";
+    const otherMembers = members.filter(m => m !== selectedUser);
+    const prevVal = payerSelect.value;
+    payerSelect.innerHTML = otherMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+    if (prevVal && otherMembers.includes(prevVal)) {
+      payerSelect.value = prevVal;
+    } else if (otherMembers.length > 0) {
+      payerSelect.value = otherMembers[0];
+    }
+  }
+
+  // Populate bank accounts dropdown
+  const payAccountSelect = document.getElementById('billsplit-pay-account');
+  if (payAccountSelect) {
+    const prevVal = payAccountSelect.value;
+    payAccountSelect.innerHTML = state.bankAccounts.map(acc => `<option value="${acc.id}">${acc.name} (Rs. ${acc.balance.toLocaleString()})</option>`).join('');
+    if (prevVal && state.bankAccounts.some(acc => acc.id === prevVal)) {
+      payAccountSelect.value = prevVal;
+    } else if (state.bankAccounts.length > 0) {
+      payAccountSelect.value = state.bankAccounts[0].id;
+    }
+  }
+
+  // Control visibility of settle card
+  const settleCard = document.getElementById('billsplit-settle-card');
+  if (settleCard) {
+    if (items.length > 0 && members.length > 0) {
+      settleCard.style.display = 'block';
+    } else {
+      settleCard.style.display = 'none';
+    }
+  }
+
+  const billSplitEl = document.getElementById('tools-billsplit-panel');
+  if (billSplitEl && typeof lucide !== 'undefined') {
+    lucide.createIcons({ nodes: [billSplitEl] });
+  } else {
+    lucide.createIcons();
+  }
+}
+
+function renderAddItemFormMembers() {
+  const container = document.getElementById('billsplit-members-checkboxes');
+  if (!container) return;
+  
+  const members = state.billSplitter.members || [];
+  if (members.length === 0) {
+    container.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">Add members in the section above first.</span>`;
+    return;
+  }
+  
+  container.innerHTML = members.map(m => `
+    <label class="form-checkbox-label" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; background: var(--bg-card); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
+      <input type="checkbox" name="billsplit-item-member" value="${m}" checked style="accent-color: var(--primary);">
+      <span>${m}</span>
+    </label>
+  `).join('');
+}
+
+function initBillSplitter() {
+  const membersList = document.getElementById('billsplit-members-list');
+  
+  // Member Add
+  const memberForm = document.getElementById('billsplit-add-member-form');
+  if (memberForm) {
+    memberForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const input = document.getElementById('billsplit-member-name');
+      if (input) {
+        const name = input.value.trim();
+        if (name) {
+          if (!state.billSplitter.members) state.billSplitter.members = [];
+          if (!state.billSplitter.members.includes(name)) {
+            state.billSplitter.members.push(name);
+            saveState();
+            renderBillSplitter();
+          } else {
+            showNotification("Duplicate Name", `"${name}" is already in the group!`, "warning", "alert-triangle");
+          }
+          input.value = '';
+        }
+      }
+    });
+  }
+
+  // Member Delete (via Badges)
+  if (membersList) {
+    membersList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.billsplit-member-remove');
+      if (btn) {
+        const name = btn.getAttribute('data-name');
+        if (state.billSplitter && state.billSplitter.members) {
+          state.billSplitter.members = state.billSplitter.members.filter(m => m !== name);
+          // Also clean up items sharing this member
+          if (state.billSplitter.items) {
+            state.billSplitter.items.forEach(item => {
+              item.shares = (item.shares || []).filter(s => s !== name);
+            });
+            // Filter out items with no shares left
+            state.billSplitter.items = state.billSplitter.items.filter(item => item.shares.length > 0);
+          }
+          saveState();
+          renderBillSplitter();
+        }
+      }
+    });
+  }
+
+  // Item Add
+  const itemForm = document.getElementById('billsplit-add-item-form');
+  if (itemForm) {
+    itemForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const nameInput = document.getElementById('billsplit-item-name');
+      const priceInput = document.getElementById('billsplit-item-price');
+      
+      // Get all checked members checkboxes
+      const checkedCheckboxes = document.querySelectorAll('input[name="billsplit-item-member"]:checked');
+      const selectedMembers = Array.from(checkedCheckboxes).map(cb => cb.value);
+      
+      if (selectedMembers.length === 0) {
+        showNotification("Select Consumer", "Please select at least one person sharing this item!", "warning", "alert-triangle");
+        return;
+      }
+      
+      if (nameInput && priceInput) {
+        const name = nameInput.value.trim();
+        const price = parseFloat(priceInput.value);
+        
+        if (name && !isNaN(price) && price > 0) {
+          if (!state.billSplitter.items) state.billSplitter.items = [];
+          
+          state.billSplitter.items.push({
+            id: 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+            name: name,
+            price: price,
+            shares: selectedMembers
+          });
+          
+          nameInput.value = '';
+          priceInput.value = '';
+          
+          // Re-check all boxes by default for the next entry
+          document.querySelectorAll('input[name="billsplit-item-member"]').forEach(cb => cb.checked = true);
+          
+          saveState();
+          renderBillSplitter();
+        }
+      }
+    });
+  }
+
+  // Parameter Inputs Listeners
+  const restInput = document.getElementById('billsplit-restaurant');
+  if (restInput) {
+    restInput.addEventListener('input', () => {
+      if (!state.billSplitter) state.billSplitter = { people: [] };
+      state.billSplitter.restaurant = restInput.value;
+      saveState();
+      updateBillSplitterTableTitle();
+    });
+  }
+
+  const discountPctInput = document.getElementById('billsplit-discount-pct');
+  if (discountPctInput) {
+    discountPctInput.addEventListener('input', () => {
+      if (!state.billSplitter) state.billSplitter = { people: [] };
+      let val = parseFloat(discountPctInput.value);
+      if (isNaN(val) || val < 0) val = 0;
+      if (val > 100) val = 100;
+      state.billSplitter.discountPct = val;
+      saveState();
+      renderBillSplitter();
+    });
+  }
+
+  const discountCapInput = document.getElementById('billsplit-discount-cap');
+  if (discountCapInput) {
+    discountCapInput.addEventListener('input', () => {
+      if (!state.billSplitter) state.billSplitter = { people: [] };
+      let val = parseFloat(discountCapInput.value);
+      if (isNaN(val) || val < 0) val = 0;
+      state.billSplitter.discountCap = val;
+      saveState();
+      renderBillSplitter();
+    });
+  }
+
+  // Payment Method Radios
+  document.querySelectorAll('input[name="billsplit-payment"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        if (!state.billSplitter) state.billSplitter = { people: [] };
+        state.billSplitter.paymentMethod = e.target.value;
+        saveState();
+        renderBillSplitter();
+      }
+    });
+  });
+
+  // Table row click for delete items
+  const itemsTbody = document.getElementById('billsplit-items-tbody');
+  if (itemsTbody) {
+    itemsTbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.billsplit-item-delete-btn');
+      if (btn) {
+        const id = btn.getAttribute('data-id');
+        if (state.billSplitter && state.billSplitter.items) {
+          state.billSplitter.items = state.billSplitter.items.filter(item => item.id !== id);
+          saveState();
+          renderBillSplitter();
+        }
+      }
+    });
+  }
+
+  // Clear Button click
+  const clearBtn = document.getElementById('billsplit-clear-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      if ((state.billSplitter.items && state.billSplitter.items.length > 0) || (state.billSplitter.members && state.billSplitter.members.length > 0)) {
+        const confirmed = await showCustomConfirm(
+          "Clear Bill Splitter",
+          "Are you sure you want to clear all members, food items, and parameters?",
+          true
+        );
+        if (confirmed) {
+          state.billSplitter.people = []; // Clean up old model if any
+          state.billSplitter.items = [];
+          state.billSplitter.members = ["Azhan", "Alina", "Ahmed"]; // Reset to default group
+          state.billSplitter.restaurant = "Seven Sides";
+          state.billSplitter.discountPct = 0;
+          state.billSplitter.discountCap = 0;
+          state.billSplitter.paymentMethod = "card";
+          
+          document.getElementById('billsplit-restaurant').value = "Seven Sides";
+          document.getElementById('billsplit-discount-pct').value = 0;
+          document.getElementById('billsplit-discount-cap').value = 0;
+          
+          const cardRadio = document.querySelector('input[name="billsplit-payment"][value="card"]');
+          if (cardRadio) cardRadio.checked = true;
+          
+          saveState();
+          renderBillSplitter();
+        }
+      }
+    });
+  }
+
+  // User dropdown change listener (re-populate payer list)
+  const userSelect = document.getElementById('billsplit-user-member');
+  if (userSelect) {
+    userSelect.addEventListener('change', () => {
+      const payerSelect = document.getElementById('billsplit-payer-select');
+      if (payerSelect) {
+        const selectedUser = userSelect.value;
+        const members = state.billSplitter.members || [];
+        const otherMembers = members.filter(m => m !== selectedUser);
+        payerSelect.innerHTML = otherMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+      }
+    });
+  }
+
+  // Payer Type Toggle Listener
+  document.querySelectorAll('input[name="billsplit-payer-type"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const mePaidSection = document.getElementById('billsplit-me-paid-section');
+      const otherPaidSection = document.getElementById('billsplit-other-paid-section');
+      if (mePaidSection && otherPaidSection) {
+        if (e.target.value === 'me') {
+          mePaidSection.style.display = 'block';
+          otherPaidSection.style.display = 'none';
+        } else {
+          mePaidSection.style.display = 'none';
+          otherPaidSection.style.display = 'block';
+        }
+      }
+    });
+  });
+
+  // Post Button Event Listener
+  const postBtn = document.getElementById('billsplit-post-btn');
+  if (postBtn) {
+    postBtn.addEventListener('click', async () => {
+      const members = state.billSplitter.members || [];
+      const items = state.billSplitter.items || [];
+      if (members.length === 0 || items.length === 0) return;
+
+      const restaurantName = (state.billSplitter.restaurant || "Seven Sides").trim();
+      const userSelect = document.getElementById('billsplit-user-member');
+      const userMember = userSelect ? userSelect.value : "";
+      
+      const payerRadio = document.querySelector('input[name="billsplit-payer-type"]:checked');
+      const payerType = payerRadio ? payerRadio.value : "me";
+      
+      const discountPct = (Number(state.billSplitter.discountPct) || 0) / 100;
+      const discountCap = Number(state.billSplitter.discountCap) || 0;
+      const paymentMethod = state.billSplitter.paymentMethod || "card";
+      const taxRate = (paymentMethod === 'cash') ? 0.16 : 0.05;
+
+      // Recalculate original food cost for each person
+      const memberOriginalCost = {};
+      members.forEach(m => memberOriginalCost[m] = 0);
+      
+      let totalFoodCost = 0;
+      items.forEach(item => {
+        const price = Number(item.price) || 0;
+        const shareCount = (item.shares || []).length;
+        if (shareCount > 0) {
+          totalFoodCost += price;
+          const sharePrice = price / shareCount;
+          item.shares.forEach(m => {
+            if (memberOriginalCost[m] !== undefined) {
+              memberOriginalCost[m] += sharePrice;
+            }
+          });
+        }
+      });
+
+      const uncappedDiscount = totalFoodCost * discountPct;
+      const actualTotalDiscount = (discountCap > 0) ? Math.min(uncappedDiscount, discountCap) : uncappedDiscount;
+
+      // Compute individual totals
+      const memberFinalTotals = {};
+      members.forEach(m => {
+        const originalAmt = memberOriginalCost[m] || 0;
+        const share = totalFoodCost > 0 ? originalAmt / totalFoodCost : 0;
+        const personDiscount = share * actualTotalDiscount;
+        const personTax = originalAmt * taxRate;
+        memberFinalTotals[m] = originalAmt - personDiscount + personTax;
+      });
+
+      let grandTotalSum = 0;
+      members.forEach(m => grandTotalSum += (memberFinalTotals[m] || 0));
+
+      let confirmTitle = "Confirm & Post Split";
+      let confirmMsg = "";
+      let payeeName = "";
+
+      if (payerType === 'me') {
+        payeeName = userMember;
+        const accountSelect = document.getElementById('billsplit-pay-account');
+        const payAccount = accountSelect ? accountSelect.value : "";
+        const account = state.bankAccounts.find(a => a.id === payAccount);
+        const accountName = account ? account.name : "your account";
+        
+        confirmMsg = `You are confirming that you (${userMember}) paid the entire bill at ${restaurantName}.\n\n` +
+          `This will:\n` +
+          `1. Deduct Rs. ${Math.round(grandTotalSum).toLocaleString()} from your bank account (${accountName}).\n` +
+          `2. Record that other members owe you their shares (totaling Rs. ${Math.round(grandTotalSum - (memberFinalTotals[userMember] || 0)).toLocaleString()}).\n\n` +
+          `Do you want to proceed?`;
+      } else {
+        const payerSelect = document.getElementById('billsplit-payer-select');
+        payeeName = payerSelect ? payerSelect.value : "";
+        
+        confirmMsg = `You are confirming that ${payeeName} paid the entire bill at ${restaurantName}.\n\n` +
+          `This will:\n` +
+          `1. Create a debt of Rs. ${Math.round(memberFinalTotals[userMember] || 0).toLocaleString()} (your share) owed to ${payeeName}.\n` +
+          `2. No money will be deducted from your bank accounts at this time.\n\n` +
+          `Do you want to proceed?`;
+      }
+
+      const confirmed = await showCustomConfirm(confirmTitle, confirmMsg, false);
+
+      if (confirmed) {
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        if (payerType === 'me') {
+          // I paid: Deduct entire bill from selected bank account
+          const accountSelect = document.getElementById('billsplit-pay-account');
+          const payAccount = accountSelect ? accountSelect.value : "";
+          
+          // 1. Record transaction: entire restaurant payment
+          addTransaction({
+            type: 'expense',
+            description: `Paid entire bill at ${restaurantName} (including friends' shares)`,
+            amount: Math.round(grandTotalSum),
+            date: todayStr,
+            account: payAccount,
+            category: 'Order Out'
+          });
+
+          // 2. Record credits: other members owe me
+          members.forEach(m => {
+            if (m !== userMember) {
+              const amountOwed = Math.round(memberFinalTotals[m] || 0);
+              if (amountOwed > 0) {
+                if (!state.debts) state.debts = [];
+                state.debts.push({
+                  id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                  type: 'credit', // Credit means others owe me
+                  person: m,
+                  description: `Dinner share at ${restaurantName}`,
+                  amount: amountOwed,
+                  remaining: amountOwed,
+                  dueDate: null,
+                  adjustMode: 'none',
+                  account: null,
+                  createdDate: todayStr
+                });
+              }
+            }
+          });
+          
+          saveState();
+          updateUI();
+          showNotification("Split Settled", "Entire bill deducted. Outstanding credits created for friends!", "saving", "check-circle");
+        } else {
+          // Someone else paid: Record a debt for my share
+          const userShare = Math.round(memberFinalTotals[userMember] || 0);
+
+          if (payeeName && userShare > 0) {
+            if (!state.debts) state.debts = [];
+            state.debts.push({
+              id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+              type: 'debt', // Debt means I owe them
+              person: payeeName,
+              description: `Dinner share at ${restaurantName}`,
+              amount: userShare,
+              remaining: userShare,
+              dueDate: null,
+              adjustMode: 'none',
+              account: null,
+              createdDate: todayStr
+            });
+            
+            saveState();
+            updateUI();
+            showNotification("Split Settled", `Recorded debt of Rs. ${userShare.toLocaleString()} owed to ${payeeName}!`, "saving", "check-circle");
+          }
+        }
+
+        // Show Post-Split Summary Popup
+        let summaryTitle = "Bill Split Summary";
+        let summaryMsg = `
+          <div style="font-family: inherit; font-size: 13.5px; color: var(--text-main); text-align: left;">
+            <p style="margin-top: 0; margin-bottom: 12px; font-weight: 600; color: var(--text-main);">
+              Split has been successfully posted to your ledger!
+            </p>
+            <div style="background: rgba(228, 0, 43, 0.05); border: 1px solid rgba(228, 0, 43, 0.15); padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Payee (Who Paid):</span>
+                <strong style="color: var(--primary);">${payeeName}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span style="color: var(--text-muted);">Total Bill:</span>
+                <strong>Rs. ${Math.round(grandTotalSum).toLocaleString()}</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Your Share:</span>
+                <strong>Rs. ${Math.round(memberFinalTotals[userMember] || 0).toLocaleString()}</strong>
+              </div>
+            </div>
+            
+            <div style="font-weight: 700; margin-bottom: 8px; font-size: 13px; color: var(--text-main);">Who Owes the Payee (${payeeName}):</div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+        `;
+        
+        members.forEach(m => {
+          if (m !== payeeName) {
+            const shareVal = Math.round(memberFinalTotals[m] || 0);
+            if (shareVal > 0) {
+              summaryMsg += `
+                <div style="display: flex; justify-content: space-between; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; align-items: center;">
+                  <span>${m} ${m === userMember ? '<strong style="color: var(--primary); font-size: 11px; padding: 2px 6px; background: rgba(228,0,43,0.08); border-radius: 4px; margin-left: 4px;">You</strong>' : ''}</span>
+                  <span style="font-weight: 700; color: var(--danger);">Rs. ${shareVal.toLocaleString()}</span>
+                </div>
+              `;
+            }
+          }
+        });
+        
+        summaryMsg += `
+            </div>
+          </div>
+        `;
+
+        await showCustomAlert(summaryTitle, summaryMsg, false);
+      }
+    });
+  }
+}
+
 // App Start
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
@@ -5554,6 +6357,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Start wishlist timers
   updateWishTimers();
+
+  // Initialize Bill Splitter
+  initBillSplitter();
 
   // Smart nudge trigger (after 2 seconds)
   setTimeout(() => {

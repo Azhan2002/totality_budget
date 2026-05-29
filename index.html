@@ -852,7 +852,11 @@
         <!-- Tools Tab Navigation -->
         <div class="tools-subnav-container">
           <div class="tools-subnav">
-            <button class="tools-subnav-btn active" data-subtab="tools-insights">
+            <button class="tools-subnav-btn active" data-subtab="tools-billsplit">
+              <i data-lucide="calculator"></i>
+              <span>Bill Splitter</span>
+            </button>
+            <button class="tools-subnav-btn" data-subtab="tools-insights">
               <i data-lucide="brain"></i>
               <span>Smart Insights</span>
             </button>
@@ -868,15 +872,11 @@
               <i data-lucide="heart"></i>
               <span>Joy Mapping</span>
             </button>
-            <button class="tools-subnav-btn" data-subtab="tools-billsplit">
-              <i data-lucide="calculator"></i>
-              <span>Bill Splitter</span>
-            </button>
           </div>
         </div>
 
         <!-- SUB-TAB 1: SMART INSIGHTS -->
-        <div class="tools-subpanel active" id="tools-insights-panel">
+        <div class="tools-subpanel" id="tools-insights-panel">
           <div class="insights-grid">
             <!-- Health Score Gauge -->
             <div class="card">
@@ -1178,7 +1178,7 @@
         </div>
 
         <!-- SUB-TAB 5: BILL SPLIT CALCULATOR -->
-        <div class="tools-subpanel" id="tools-billsplit-panel">
+        <div class="tools-subpanel active" id="tools-billsplit-panel">
           <div class="tools-split-layout">
             <!-- Left Side: Split Parameters, Group Members & Add Item -->
             <div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 320px;">
@@ -1228,7 +1228,7 @@
                   <button type="submit" class="btn btn-secondary" style="padding: 10px 14px;">Add</button>
                 </form>
                 
-                <div id="billsplit-members-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px;">
+                 <div id="billsplit-members-list" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; height: 60px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: rgba(0,0,0,0.1); box-sizing: border-box;">
                   <!-- List of members with delete icons dynamically loaded -->
                 </div>
               </div>
@@ -1250,7 +1250,7 @@
                   
                   <div class="form-group" style="margin-top: 12px;">
                     <label>Shared By (Who consumed this?)</label>
-                    <div id="billsplit-members-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                    <div id="billsplit-members-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; height: 60px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px; background: rgba(0,0,0,0.1); box-sizing: border-box;">
                       <!-- Dynamically filled with member checkboxes -->
                     </div>
                   </div>
@@ -1275,7 +1275,7 @@
                   </button>
                 </div>
                 
-                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <div class="table-responsive" style="height: 326px; overflow-y: auto;">
                   <table class="table" style="table-layout: fixed; width: 100%;">
                     <thead>
                       <tr>
@@ -1296,7 +1296,7 @@
               <div class="card">
                 <h3 class="card-title" id="billsplit-table-title">📋 Split Breakdown</h3>
                 
-                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                <div class="table-responsive" style="height: 165px; overflow-y: auto;">
                   <table class="table" style="table-layout: fixed; width: 100%;">
                     <thead>
                       <tr>
@@ -1338,67 +1338,77 @@
                 </div>
 
                 <!-- Verification Area -->
-                <div id="billsplit-verification-box" style="margin-top: 16px; padding: 12px; border-radius: 8px; background: rgba(16, 185, 129, 0.08); border-left: 4px solid var(--success); display: none;">
+                <div id="billsplit-verification-box" style="margin-top: 16px; padding: 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.03); border-left: 4px solid var(--border-color); display: block;">
                   <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                    <i data-lucide="check-circle" height="16" width="16" style="color: var(--success);"></i>
-                    <span style="font-weight: 700; font-size: 13px; color: var(--success);" id="billsplit-verif-badge">Calculations Verified</span>
+                    <i data-lucide="check-circle" height="16" width="16" style="color: var(--text-muted);"></i>
+                    <span style="font-weight: 700; font-size: 13px; color: var(--text-muted);" id="billsplit-verif-badge">Awaiting Calculations</span>
                   </div>
                   <p style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4;" id="billsplit-verif-details">
-                    Sum of splits matches the formula: (Total Food Cost - Discount) + Tax.
+                    Add group members and food items to verify splits.
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Settle & Post Card -->
-              <div class="card" id="billsplit-settle-card" style="display: none; border-top: 4px solid var(--primary); margin-top: 20px;">
-                <h3 class="card-title">🔗 Settle & Post to Ledger</h3>
-                <p style="color: var(--text-muted); font-size: 12.5px; margin-bottom: 16px;">
+          <!-- Settle & Post Card (credit to ledger block) covering the whole horizontal area and slimmer at the bottom -->
+          <div class="card" id="billsplit-settle-card" style="border-top: 4px solid var(--primary); margin-top: 20px; width: 100%; box-sizing: border-box; padding: 14px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+              <div>
+                <h3 class="card-title" style="margin-bottom: 2px;">🔗 Settle & Post to Ledger</h3>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0;">
                   Record these split bills directly into your Credits & Debts ledger and bank accounts.
                 </p>
-                
-                <div class="form-group">
-                  <label for="billsplit-user-member">Which member is you?</label>
-                  <select id="billsplit-user-member" class="form-control">
-                    <!-- Dynamic list of members -->
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+              <!-- Field 1: Which member is you? -->
+              <div class="form-group" style="margin: 0;">
+                <label for="billsplit-user-member" style="font-size: 11.5px; font-weight: 600; margin-bottom: 6px; display: block;">Which member is you?</label>
+                <select id="billsplit-user-member" class="form-control" style="height: 38px; padding: 6px 12px;">
+                  <!-- Dynamic list of members -->
+                </select>
+              </div>
+
+              <!-- Field 2: Who paid the total bill? -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 11.5px; font-weight: 600; margin-bottom: 6px; display: block;">Who paid the total bill?</label>
+                <div style="display: flex; gap: 16px; height: 38px; align-items: center; background: rgba(0,0,0,0.1); border: 1px solid var(--border-color); border-radius: 8px; padding: 0 12px;">
+                  <label class="form-radio-label" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; margin: 0;">
+                    <input type="radio" name="billsplit-payer-type" value="me" checked>
+                    <span>I Paid</span>
+                  </label>
+                  <label class="form-radio-label" style="display: flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; margin: 0;">
+                    <input type="radio" name="billsplit-payer-type" value="other">
+                    <span>Someone Else</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Field 3: Conditional selection (I Paid - Account / Someone Else - Person) -->
+              <div style="margin: 0;">
+                <!-- Conditional Section: I Paid -->
+                <div id="billsplit-me-paid-section" class="form-group" style="margin: 0;">
+                  <label for="billsplit-pay-account" style="font-size: 11.5px; font-weight: 600; margin-bottom: 6px; display: block;">Deduct from bank account:</label>
+                  <select id="billsplit-pay-account" class="form-control" style="height: 38px; padding: 6px 12px;">
+                    <!-- List of bank accounts -->
                   </select>
                 </div>
 
-                <div class="form-group" style="margin-top: 12px;">
-                  <label>Who paid the total bill?</label>
-                  <div style="display: flex; gap: 12px; margin-top: 8px;">
-                    <label class="form-radio-label" style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
-                      <input type="radio" name="billsplit-payer-type" value="me" checked>
-                      <span>I Paid</span>
-                    </label>
-                    <label class="form-radio-label" style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
-                      <input type="radio" name="billsplit-payer-type" value="other">
-                      <span>Someone Else Paid</span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Conditional Section: I Paid -->
-                <div id="billsplit-me-paid-section" style="margin-top: 12px;">
-                  <div class="form-group">
-                    <label for="billsplit-pay-account">Deduct entire bill from bank account:</label>
-                    <select id="billsplit-pay-account" class="form-control">
-                      <!-- List of bank accounts -->
-                    </select>
-                  </div>
-                </div>
-
                 <!-- Conditional Section: Someone Else Paid -->
-                <div id="billsplit-other-paid-section" style="margin-top: 12px; display: none;">
-                  <div class="form-group">
-                    <label for="billsplit-payer-select">Who paid?</label>
-                    <select id="billsplit-payer-select" class="form-control">
-                      <!-- List of other members -->
-                    </select>
-                  </div>
+                <div id="billsplit-other-paid-section" class="form-group" style="margin: 0; display: none;">
+                  <label for="billsplit-payer-select" style="font-size: 11.5px; font-weight: 600; margin-bottom: 6px; display: block;">Who paid?</label>
+                  <select id="billsplit-payer-select" class="form-control" style="height: 38px; padding: 6px 12px;">
+                    <!-- List of other members -->
+                  </select>
                 </div>
+              </div>
 
-                <button id="billsplit-post-btn" class="btn btn-primary" style="width: 100%; margin-top: 16px; gap: 8px;">
-                  <i data-lucide="send"></i>
+              <!-- Button -->
+              <div style="margin: 0;">
+                <button id="billsplit-post-btn" class="btn btn-primary" style="width: 100%; height: 38px; gap: 8px; justify-content: center; font-size: 13.5px; align-items: center; display: inline-flex;">
+                  <i data-lucide="send" style="width: 16px; height: 16px;"></i>
                   <span>Confirm & Post Split</span>
                 </button>
               </div>

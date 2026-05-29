@@ -5546,6 +5546,12 @@ function updateBillSplitterTableTitle() {
 }
 
 function renderBillSplitter() {
+  const mainContent = document.querySelector('.main-content');
+  const savedScrollTop = mainContent ? mainContent.scrollTop : 0;
+
+  const itemsTableContainer = document.querySelector('#tools-billsplit-panel .table-responsive');
+  const savedTableScrollTop = itemsTableContainer ? itemsTableContainer.scrollTop : 0;
+
   if (!state.billSplitter) {
     state.billSplitter = {
       restaurant: "Seven Sides",
@@ -5571,9 +5577,9 @@ function renderBillSplitter() {
       membersListEl.innerHTML = `<span style="color: var(--text-muted); font-size: 12px;">No members added. Enter names above to create a group.</span>`;
     } else {
       membersListEl.innerHTML = members.map(m => `
-        <div class="member-pill" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(228, 0, 43, 0.08); color: var(--primary); border: 1px solid rgba(228, 0, 43, 0.15); padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; box-sizing: border-box;">
+        <div class="member-pill" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(228, 0, 43, 0.08); color: var(--primary); border: 1px solid rgba(228, 0, 43, 0.15); padding: 3px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 600; box-sizing: border-box;">
           <span>${m}</span>
-          <span class="billsplit-member-remove" data-name="${m}" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-muted); font-size: 14px; line-height: 1; height: 14px; width: 14px; transition: color 0.2s;" title="Remove Member">×</span>
+          <span class="billsplit-member-remove" data-name="${m}" style="cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-muted); font-size: 12px; line-height: 1; height: 12px; width: 12px; transition: color 0.2s;" title="Remove Member">×</span>
         </div>
       `).join('');
     }
@@ -5711,11 +5717,11 @@ function renderBillSplitter() {
   // Render Verification box
   const verifBox = document.getElementById('billsplit-verification-box');
   if (verifBox) {
+    verifBox.style.display = 'block';
+    const verifDetails = document.getElementById('billsplit-verif-details');
+    const verifBadge = document.getElementById('billsplit-verif-badge');
+    
     if (items.length > 0 && members.length > 0) {
-      verifBox.style.display = 'block';
-      const verifDetails = document.getElementById('billsplit-verif-details');
-      const verifBadge = document.getElementById('billsplit-verif-badge');
-      
       const diff = Math.abs(grandTotalSum - formulaTotal);
       if (diff < 0.2) { // 0.2 threshold to handle minor roundings
         verifBox.style.background = 'rgba(16, 185, 129, 0.08)';
@@ -5745,7 +5751,15 @@ function renderBillSplitter() {
         }
       }
     } else {
-      verifBox.style.display = 'none';
+      verifBox.style.background = 'rgba(255, 255, 255, 0.03)';
+      verifBox.style.borderLeftColor = 'var(--border-color)';
+      if (verifBadge) {
+        verifBadge.innerText = 'Awaiting Calculations';
+        verifBadge.style.color = 'var(--text-muted)';
+      }
+      if (verifDetails) {
+        verifDetails.innerHTML = 'Add group members and food items to verify splits.';
+      }
     }
   }
 
@@ -5823,13 +5837,17 @@ function renderBillSplitter() {
     }
   }
 
-  // Control visibility of settle card
-  const settleCard = document.getElementById('billsplit-settle-card');
-  if (settleCard) {
+  // Control state of settle post button
+  const postBtn = document.getElementById('billsplit-post-btn');
+  if (postBtn) {
     if (items.length > 0 && members.length > 0) {
-      settleCard.style.display = 'block';
+      postBtn.disabled = false;
+      postBtn.style.opacity = '1';
+      postBtn.style.cursor = 'pointer';
     } else {
-      settleCard.style.display = 'none';
+      postBtn.disabled = true;
+      postBtn.style.opacity = '0.5';
+      postBtn.style.cursor = 'not-allowed';
     }
   }
 
@@ -5838,6 +5856,13 @@ function renderBillSplitter() {
     lucide.createIcons({ nodes: [billSplitEl] });
   } else {
     lucide.createIcons();
+  }
+
+  if (mainContent) {
+    mainContent.scrollTop = savedScrollTop;
+  }
+  if (itemsTableContainer) {
+    itemsTableContainer.scrollTop = savedTableScrollTop;
   }
 }
 
@@ -5852,8 +5877,8 @@ function renderAddItemFormMembers() {
   }
   
   container.innerHTML = members.map(m => `
-    <label class="form-checkbox-label" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; background: var(--bg-card); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-      <input type="checkbox" name="billsplit-item-member" value="${m}" checked style="accent-color: var(--primary);">
+    <label class="form-checkbox-label" style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; background: var(--bg-card); border: 1px solid var(--border-color); padding: 3px 8px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
+      <input type="checkbox" name="billsplit-item-member" value="${m}" style="accent-color: var(--primary);">
       <span>${m}</span>
     </label>
   `).join('');
@@ -5868,6 +5893,9 @@ function initBillSplitter() {
     memberForm.addEventListener('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
       const input = document.getElementById('billsplit-member-name');
       if (input) {
         const name = input.value.trim();
@@ -5915,6 +5943,9 @@ function initBillSplitter() {
     itemForm.addEventListener('submit', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (document.activeElement) {
+        document.activeElement.blur();
+      }
       const nameInput = document.getElementById('billsplit-item-name');
       const priceInput = document.getElementById('billsplit-item-price');
       
